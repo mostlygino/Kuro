@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="720" viewBox="0 0 640 720" role="img" aria-label="Every state drawn: Badges with a shape for every state.; Windows in place: A tiling desktop built on AeroSpace.; Motion with intent: Transitions keep the desktop coherent.">
+<defs>
+ <linearGradient id="material" x1="0" y1="0" x2="0.65" y2="1"><stop stop-color="#f9f7fc"/><stop offset="1" stop-color="#dfdde7"/></linearGradient>
+ <linearGradient id="rim" x2="0" y2="1"><stop stop-color="#ffffff" stop-opacity="0.55"/><stop offset="0.45" stop-color="#b4a9c1" stop-opacity="0.2"/><stop offset="1" stop-color="#b4a9c1" stop-opacity="0.8"/></linearGradient>
+ <pattern id="weave" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 1H7M1 0V7" stroke="#b4a9c1" stroke-width="0.7"/><path d="M4 3h2M3 5h1" stroke="#b4a9c1" stroke-width="0.6"/></pattern>
+ <filter id="lift" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="7" stdDeviation="8" flood-opacity="0.2"/></filter>
+</defs>
+<rect x="1" y="1" width="638" height="718" rx="24" fill="url(#material)" stroke="#b4a9c1"/>
+<path d="M403.2 2H505.6L268.8 718H204.8Z" fill="#ffffff" opacity="0.035"/>
+<rect x="3" y="3" width="634" height="714" rx="22" fill="none" stroke="url(#rim)"/>
+<rect x="36" y="24" width="568" height="208" rx="14" fill="#f9f7fc" stroke="#b4a9c1"/>
+ <path d="M54 27H586" stroke="#fff" opacity="0.3"/>
+ <text x="58" y="61" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="14" letter-spacing="2" fill="#704580">01</text>
+ <text x="58" y="105" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="27" font-weight="650" fill="#2c2639">Every state drawn</text>
+ <text x="58" y="149" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="24" font-weight="400" fill="#62586e">Badges with a shape for every state.</text><rect x="36" y="256" width="568" height="208" rx="14" fill="#f9f7fc" stroke="#b4a9c1"/>
+ <path d="M54 259H586" stroke="#fff" opacity="0.3"/>
+ <text x="58" y="293" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="14" letter-spacing="2" fill="#704580">02</text>
+ <text x="58" y="337" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="27" font-weight="650" fill="#2c2639">Windows in place</text>
+ <text x="58" y="381" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="24" font-weight="400" fill="#62586e">A tiling desktop built on AeroSpace.</text><rect x="36" y="488" width="568" height="208" rx="14" fill="#f9f7fc" stroke="#b4a9c1"/>
+ <path d="M54 491H586" stroke="#fff" opacity="0.3"/>
+ <text x="58" y="525" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="14" letter-spacing="2" fill="#704580">03</text>
+ <text x="58" y="569" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="27" font-weight="650" fill="#2c2639">Motion with intent</text>
+ <text x="58" y="613" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="24" font-weight="400" fill="#62586e">Transitions keep the desktop coherent.</text>
+</svg>

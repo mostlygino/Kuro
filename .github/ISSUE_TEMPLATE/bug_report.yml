@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in Kuro doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for reporting. For security problems, please use [private reporting](https://github.com/mostlygino/Kuro/security/advisories/new) instead."
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Plug in a second screen\n2. …"
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part?
+      options:
+        - A badge or its card
+        - Now Playing
+        - Workspaces or AeroSpace
+        - Keys
+        - The menu bar coming down
+        - install.sh
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: macOS version and screens
+      placeholder: "macOS 26.1, Apple silicon, MacBook plus one external"
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots help. Please blur anything private (window titles, network names, contacts).

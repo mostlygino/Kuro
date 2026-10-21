@@ -1,0 +1,1359 @@
+#!/bin/zsh
+
+# THESIS: one quiet strip for workspace context, not a dashboard.
+# OWN-WORLD: two floating graphite pills on bare desktop, one cool active state.
+# STORY: scan the workspace, active app, media, and time.
+# FIRST VIEWPORT: workspaces and app left, media and time right, middle empty.
+# FORM: native macOS utility bar, restrained and text-led.
+# FINISH: verified on both attached displays with event-driven updates.
+
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+PLUGIN_DIR="$CONFIG_DIR/plugins"
+source "$CONFIG_DIR/colors.sh"
+
+# topmost=window puts the bar on window layer 3: above app windows, below
+# Notchling's notch overlay on layer 25. topmost=on also lands on layer 25 and
+# ties with Notchling, leaving the z-order between them undefined.
+# The bar itself draws nothing now. It is only the container that positions the
+# two pills; all fill, border, and shadow moved to the brackets at the bottom of
+# this file, so the middle of the screen stays bare desktop.
+#
+# blur_radius stays on permanently even though the bar is transparent, and it
+# costs nothing visually: a blur with no fill behind it renders identically to no
+# blur. It is left on because toggling it was producing an intermittent white
+# flash on hover, the blur backing compositing bright for one frame before it was
+# initialised, which the menu bar's own material then sampled and amplified.
+sketchybar --bar \
+  position=top \
+  display=all \
+  height="$BAR_HEIGHT" \
+  margin=10 \
+  y_offset=6 \
+  color="$TRANSPARENT" \
+  border_width=0 \
+  corner_radius=0 \
+  blur_radius="$HOVER_BLUR" \
+  padding_left=0 \
+  padding_right=0 \
+  shadow=off \
+  sticky=on \
+  topmost=window \
+  font_smoothing=on
+# No notch_width. It only feeds the `q` and `e` item positions, and the notch is
+# dodged by dropping the pill below it instead of moving it sideways, so nothing
+# reads the value. It was also wrong: the notch is a fixed slice of the panel,
+# so its width in points tracks the scaling, and the 220 that used to sit here
+# is 185 at the 1512x982 default.
+
+defaults=(
+  icon.drawing=off
+  y_offset="$PILL_Y"
+  label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$BAR_FONT_SIZE"
+  label.color="$TEXT_COLOR"
+  label.padding_left=7
+  label.padding_right=7
+  padding_left=1
+  padding_right=1
+  background.drawing=off
+)
+sketchybar --default "${defaults[@]}"
+
+sketchybar --add event aerospace_workspace_change
+sketchybar --add event aerospace_focus_change
+
+# The aqua gloss went with the full-width slab. It was a PNG rendered at each
+# display's exact bar width, and a pill resizes every time the app name changes,
+# so a natural-size image could never track it. Its renderer and plugin were kept
+# on disk for a while "in case the slab comes back", which is what git is for;
+# they are in the history under assets/gloss.swift and plugins/gloss.sh.
+
+# Pure spacer, and it has to be a bracket *member* to do anything useful. The
+# first workspace chip is a filled circle sitting in the pill's fully rounded
+# left cap, and at a 3pt item padding it cleared that arc by only ~4pt, which
+# reads as glued to the corner.
+#
+# Widening the bracket instead (a more negative background.padding_left) does not
+# work here: the bar margin is only 10pt, so pushing the pill's fill further left
+# runs it off the screen edge rather than moving the chip inward. The gap has to
+# come from inside the pill, and putting it on the workspace items themselves
+# would also widen every gap between chips. Hence one empty item.
+#
+# `width=7` is load-bearing, not decoration. Left out, the item auto-sizes to -1
+# and comes back *wider*, pushing the first chip from x=20 to x=32.
+#
+# Careful when tuning any of this: a live `sketchybar --set` does not re-run
+# layout for size properties. Item width and bracket padding only take effect on
+# `--reload`, so a sweep driven by `--set` reports no change and looks inert when
+# it is anything but.
+sketchybar --add item left_pad left \
+  --set left_pad \
+    icon.drawing=off \
+    label.drawing=off \
+    width=7 \
+    padding_left=3 \
+    padding_right=1 \
+    background.drawing=off
+
+for sid in {1..10} S; do
+  sketchybar --add item "workspace.$sid" left \
+    --set "workspace.$sid" \
+      drawing=off \
+      label="$sid" \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$BAR_FONT_SIZE" \
+      label.color="$MUTED_COLOR" \
+      label.width=23 \
+      label.align=center \
+      label.padding_left=0 \
+      label.padding_right=0 \
+      padding_left=3 \
+      padding_right=3 \
+      background.drawing=on \
+      background.height="$CHIP_HEIGHT" \
+      background.corner_radius=12.5 \
+      background.color="$TRANSPARENT" \
+      click_script="$PLUGIN_DIR/workspace_click.sh '$sid'"
+done
+
+# The agent chip, one per display, after the numbers: the hidden agent spaces
+# F1 to F12 (aerospace.toml) in TestFlight's colours, a white propeller on its
+# blue. Solid, with the space's name, on a display that is showing one; on the
+# main display, a quiet blue propeller and a count while agents have windows
+# out of sight. A click goes to the next agent space with windows.
+for did in {1..3}; do
+  sketchybar --add item "workspace.agent.$did" left \
+    --set "workspace.agent.$did" \
+      drawing=off \
+      display="$did" \
+      icon="$AGENT_ICON" \
+      icon.drawing=on \
+      icon.font="Hack Nerd Font:Bold:13" \
+      icon.color="$AGENT_BLUE" \
+      icon.padding_left=8 \
+      icon.padding_right=4 \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$BAR_FONT_SIZE" \
+      label.color="$AGENT_BLUE" \
+      label.padding_left=0 \
+      label.padding_right=9 \
+      padding_left=3 \
+      padding_right=3 \
+      background.drawing=on \
+      background.height="$CHIP_HEIGHT" \
+      background.corner_radius=12.5 \
+      background.color="$TRANSPARENT" \
+      click_script="$PLUGIN_DIR/agent_space.sh next"
+done
+
+# One app label per display: bright when that display holds focus, muted when it
+# just reports what is sitting there. Extra ids stay hidden until a display exists.
+#
+# Neither these nor the workspace chips run a script of their own any more:
+# `aerospace_sync` below updates all of them in one pass. See
+# plugins/aerospace_sync.sh for why fourteen scripts asking AeroSpace at once,
+# on every monitor change, was what crashed it.
+for did in {1..3}; do
+  sketchybar --add item "front_app.$did" left \
+    --set "front_app.$did" \
+      drawing=off \
+      display="$did" \
+      label.color="$MUTED_COLOR" \
+      label.max_chars=24 \
+      label.padding_left=7 \
+      icon.drawing=off \
+      icon.width=16 \
+      icon.padding_left=12 \
+      icon.padding_right=0 \
+      icon.background.drawing=on \
+      icon.background.color="$TRANSPARENT" \
+      icon.background.image.scale="$APP_ICON_SCALE" \
+      label.padding_right="$PILL_TEXT_PAD" \
+      click_script="${FRONT_APP_CLICK:-}"
+done
+
+# The single script behind all of the above. Invisible, and `updates=on` because
+# a hidden item otherwise gets no events at all.
+sketchybar --add item aerospace_sync left \
+  --set aerospace_sync \
+    drawing=off \
+    updates=on \
+    width=0 \
+    script="$PLUGIN_DIR/aerospace_sync.sh" \
+  --subscribe aerospace_sync \
+    front_app_switched \
+    aerospace_focus_change \
+    aerospace_workspace_change \
+    display_change \
+    system_woke
+
+# The clock is the time and nothing else. The week number and the date lived
+# beside it until 2026-09-29, in a muted second item; now they are in its card,
+# which a right-click opens, with the month drawn out and a row that opens the
+# calendar. A left click is Notification Center, as it is on the real clock.
+#
+# The card follows the rest of the bar's rows, grey context left and answer
+# right, around one image row: assets/monthmark draws the month, week numbers
+# down the side and today on a white disc. A popup row as tall as its image is
+# measured, not assumed: a 150pt image row pushed the row under it down by 150.
+sketchybar --add item clock right \
+  --set clock \
+    update_freq=10 \
+    icon.drawing=off \
+    label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$BAR_FONT_SIZE" \
+    label.color="$TEXT_COLOR" \
+    label.padding_left="$PILL_TEXT_PAD" \
+    label.padding_right="$PILL_TEXT_PAD" \
+    script="$PLUGIN_DIR/clock.sh" \
+    click_script="$PLUGIN_DIR/card_click.sh clock" \
+    popup.align=right \
+    popup.y_offset="$CARD_Y_OFFSET" \
+    popup.height="$CARD_ROW_HEIGHT" \
+    popup.background.drawing=on \
+    popup.background.color="$PILL_COLOR" \
+    popup.background.border_width=1 \
+    popup.background.border_color="$BORDER_COLOR" \
+    popup.background.corner_radius=12 \
+    popup.background.shadow.drawing=on \
+    popup.background.shadow.color="$SHADOW_COLOR" \
+    popup.background.shadow.distance=4 \
+    popup.background.shadow.angle=270 \
+  --subscribe clock system_woke
+
+# Today, the week, the day of the year, the month, and the calendar. clock.sh
+# fills them on its tick, so the card never waits on `date` to open. Every row
+# but the image opens the calendar too: a card about the date is a way in to it.
+for row in today week year month calendar; do
+  sketchybar --add item "clock.$row" popup.clock \
+    --set "clock.$row" \
+      y_offset=0 \
+      icon.drawing=on \
+      icon.width="$CARD_CONTEXT_WIDTH" \
+      icon.align=left \
+      icon.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      icon.color="$MUTED_COLOR" \
+      icon.padding_left="$CARD_TEXT_PAD" \
+      icon.padding_right=0 \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      label.color="$TEXT_COLOR" \
+      label.width="$CARD_VALUE_WIDTH" \
+      label.align=right \
+      label.padding_left=0 \
+      label.padding_right="$CARD_TEXT_PAD" \
+      background.drawing=off \
+      click_script="$CLOCK_CLICK"
+done
+# The month is an image and no text, as wide as a text row measures on the bar,
+# 176 + 104: the text paddings fall inside those widths. Set to the sum with the
+# paddings added, 304, it pushed the card out and left the rows' values 36pt
+# short of its right edge.
+sketchybar --set clock.month \
+    icon.drawing=off \
+    label.drawing=off \
+    width=$(( CARD_CONTEXT_WIDTH + CARD_VALUE_WIDTH )) \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.image.drawing=on \
+    background.image.scale=0.5 \
+  --set clock.calendar label.color="$CLOCK_ACCENT"
+
+# Spacing on this run of badges is carried by each one's `padding_right` alone,
+# and the numbers are measured rather than derived. An item with an explicit
+# `width` swallows its own `padding_left` entirely, and its `padding_right` does
+# not push its neighbours either: it slides the item's own image left, one point
+# per point, inside a slot that stays `width` wide. Measured by stepping the
+# shield's padding_right from 16 to 60 and watching the burst beside it not move.
+# So each badge is placed by its own number, and the numbers come from what is
+# drawn. The burst and the battery run to the edges of their boxes; the shield
+# symbol sits inside its 16pt box, ink from about 3pt to 13.5pt.
+#
+# The three sit in their own pill, `badge_pill`. A bracket spans each member's
+# image plus its paddings, so the burst's padding_left is the pill's inset on
+# the left and the battery's padding_right its inset on the right, while the
+# gaps between the badges still come from padding_right sliding each image:
+#
+#   pill inset, both ends:  BADGE_INSET, as padding_left on the burst and
+#                           padding_right on the battery
+#   shield  -> Wi-Fi:       padding_right = Wi-Fi's + ITEM_GAP - 2
+#   burst   -> shield:      padding_right = shield's + ITEM_GAP - 3
+#
+# The bracket's right edge sits on the next item's slot whatever the paddings
+# say, so the gap to the clock pill is a spacer item, `badge_gap`, the same way
+# `pill_gap` separates the two pills on the left.
+#
+# 10pt matches the clock pill, measured from its border to the first glyph.
+BADGE_INSET=10
+# The badges, left to right, and the ones this bar has (KURO_BADGES, colors.sh).
+# A badge that is off is never made: no item, no card, no script, so the Claude
+# one never touches the keychain and the vitals one never polls.
+BADGE_ORDER=(orbstack caffeinate vitals claude tailscale wifi battery)
+badge_on() { [[ " $KURO_BADGES " == *" $1 "* ]]; }
+
+# Where each mark's ink sits in its box, left and right, in points: the battery
+# ring, the burst and the Wi-Fi dots (a 26pt box, the rest are 18) run edge to
+# edge, the drawn shield from 2 to 16, the ghost 1pt in from the left and 2 from
+# the right, the capsule 2 and 1, the orb 2 and 2. Measured on the bar rather
+# than computed, because antialiased edges read differently at this size.
+typeset -A INK_L INK_R PAD_L PAD_R
+INK_L=(orbstack 2 caffeinate 2 vitals 1 claude 0 tailscale 2 wifi 0 battery 0)
+INK_R=(orbstack 2 caffeinate 1 vitals 2 claude 0 tailscale 2 wifi 0 battery 0)
+
+# Each badge's padding_right leaves ITEM_GAP of clear desktop between its ink
+# and its right neighbour's, so it is the neighbour's plus the gap less the two
+# margins that face each other: it builds from the right edge, over the badges
+# that are on. A fixed chain, as this was until 2026-10-20, left a gap twice the
+# size wherever a badge was taken out. The rightmost carries the pill's inset;
+# every badge's padding_left is the inset less its left margin, which only shows
+# on whichever one is leftmost (OrbStack, while it runs, then the capsule).
+prev=""
+for (( i = ${#BADGE_ORDER}; i >= 1; i-- )); do
+  b=${BADGE_ORDER[$i]}
+  badge_on "$b" || continue
+  if [[ -z "$prev" ]]; then PAD_R[$b]=$(( BADGE_INSET - INK_R[$b] ))
+  else PAD_R[$b]=$(( PAD_R[$prev] + ITEM_GAP - INK_R[$b] - INK_L[$prev] )); fi
+  PAD_L[$b]=$(( BADGE_INSET - INK_L[$b] ))
+  prev=$b
+done
+unset prev b
+
+sketchybar --add item badge_gap right \
+  --set badge_gap \
+    display=1 \
+    width="$ITEM_GAP" \
+    icon.drawing=off \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    padding_left=0 \
+    padding_right=0 \
+    background.drawing=off
+
+#
+# The battery, sitting immediately right of the VPN shield so the two
+# machine-state badges read as a pair with the clock pill still anchoring the
+# end of the bar. Added *before* tailscale, because right items lay out from the
+# right edge inward in order of addition, so earlier means further right.
+#
+# A drawn ring, like the Claude badge: see assets/batterymark.swift. Same
+# consequences here, so the same three lines: `width=16` is the
+# image's exact width in points and SketchyBar does not clip a background image
+# to its item, `background.image.scale=0.5` because the PNG is drawn at two
+# pixels per point, and both label
+# paddings pinned to 0 because menubar_reveal.sh restores with a blanket
+# `label.drawing=on` and an empty label that is drawing still holds its padding.
+#
+# `power_source_change` is the event that matters: plugging in or pulling the
+# cable should land immediately, not up to a minute later. The 60s timer is only
+# for the slow drift of the level itself.
+sketchybar --add item battery right \
+  --set battery \
+    drawing=off \
+    display=1 \
+    update_freq=60 \
+    width=18 \
+    icon.drawing=off \
+    icon.padding_left=0 \
+    icon.padding_right=0 \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    padding_left="${PAD_L[battery]}" \
+    padding_right="${PAD_R[battery]}" \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.height=18 \
+    background.image.drawing=on \
+    background.image.scale=0.5 \
+    script="$PLUGIN_DIR/battery.sh" \
+    popup.align=right \
+    popup.y_offset="$CARD_Y_OFFSET" \
+    popup.height="$CARD_ROW_HEIGHT" \
+    popup.background.drawing=on \
+    popup.background.color="$PILL_COLOR" \
+    popup.background.border_width=1 \
+    popup.background.border_color="$BORDER_COLOR" \
+    popup.background.corner_radius=12 \
+    popup.background.shadow.drawing=on \
+    popup.background.shadow.color="$SHADOW_COLOR" \
+    popup.background.shadow.distance=4 \
+    popup.background.shadow.angle=270 \
+    click_script="$PLUGIN_DIR/card_click.sh battery" \
+  --subscribe battery power_source_change system_woke
+
+# What the drawn level cannot say: the number itself, where the power is coming
+# from, how long it lasts, and whether the cell is still healthy rather than
+# merely full. Same two-column card as the Claude and Tailscale popups, grey
+# context left, answer right, right-aligned so the values line up in a column.
+#
+# Slot widths rather than item width, and `y_offset=0` against the `--default`
+# of 16: see the note on the Claude rows, both traps are the same here.
+#
+# Two of these rows can go missing. battery.sh drops the condition row when
+# system_profiler cannot answer and the draw row when power telemetry reports
+# nothing, rather than filling either with a guess, so the card is three rows
+# tall in the worst case and five in the normal one.
+for row in charge power draw remaining health; do
+  sketchybar --add item "battery.$row" popup.battery \
+    --set "battery.$row" \
+      y_offset=0 \
+      icon.drawing=on \
+      icon.width="$CARD_CONTEXT_WIDTH" \
+      icon.align=left \
+      icon.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      icon.color="$MUTED_COLOR" \
+      icon.padding_left="$CARD_TEXT_PAD" \
+      icon.padding_right=0 \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      label.color="$TEXT_COLOR" \
+      label.width="$CARD_VALUE_WIDTH" \
+      label.align=right \
+      label.padding_left=0 \
+      label.padding_right="$CARD_TEXT_PAD" \
+      background.drawing=off \
+      click_script="/usr/bin/open 'x-apple.systempreferences:com.apple.preference.battery'"
+done
+
+# Wi-Fi, between the Tailscale shield and the battery. Four drawn dots lit as
+# far as the signal reaches; the card
+# has the network, signal and noise, band and channel, link rate, security,
+# this Mac's address, the router and the internet with their round trips, and
+# a row that turns Wi-Fi off or on. See plugins/wifi.sh and assets/wifiinfo.
+sketchybar --add item wifi right \
+  --set wifi \
+    drawing=off \
+    display=1 \
+    update_freq=5 \
+    width=26 \
+    icon.drawing=off \
+    icon.padding_left=0 \
+    icon.padding_right=0 \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    padding_left="${PAD_L[wifi]}" \
+    padding_right="${PAD_R[wifi]}" \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.height=18 \
+    background.image.drawing=on \
+    background.image.scale=0.5 \
+    popup.align=right \
+    popup.y_offset="$CARD_Y_OFFSET" \
+    popup.height="$CARD_ROW_HEIGHT" \
+    popup.background.drawing=on \
+    popup.background.color="$PILL_COLOR" \
+    popup.background.border_width=1 \
+    popup.background.border_color="$BORDER_COLOR" \
+    popup.background.corner_radius=12 \
+    popup.background.shadow.drawing=on \
+    popup.background.shadow.color="$SHADOW_COLOR" \
+    popup.background.shadow.distance=4 \
+    popup.background.shadow.angle=270 \
+    script="$PLUGIN_DIR/wifi.sh" \
+    click_script="$PLUGIN_DIR/card_click.sh wifi" \
+  --subscribe wifi wifi_change system_woke
+
+for row in network since internet signal radio rate security address router toggle; do
+  case "$row" in
+    network) action="$PLUGIN_DIR/wifi.sh network" ;;
+    toggle)  action="$PLUGIN_DIR/wifi.sh toggle" ;;
+    *)       action="/usr/bin/open 'x-apple.systempreferences:com.apple.wifi-settings-extension'" ;;
+  esac
+  sketchybar --add item "wifi.$row" popup.wifi \
+    --set "wifi.$row" \
+      drawing=off \
+      y_offset=0 \
+      icon.drawing=on \
+      icon.width="$CARD_CONTEXT_WIDTH" \
+      icon.align=left \
+      icon.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      icon.color="$MUTED_COLOR" \
+      icon.padding_left="$CARD_TEXT_PAD" \
+      icon.padding_right=0 \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      label.color="$TEXT_COLOR" \
+      label.width="$CARD_VALUE_WIDTH" \
+      label.align=right \
+      label.padding_left=0 \
+      label.padding_right="$CARD_TEXT_PAD" \
+      background.drawing=off \
+      click_script="$action"
+done
+
+# Right items lay out right-edge inward in add order, so adding tailscale
+# after the clock puts it left of the clock pill.
+#
+# Image-only, no label: a shield reads as a VPN state badge at a glance, the
+# same way the native menu bar's own VPN icon does. Drawn by assets/vpnmark in
+# four states, up, down, pending and attention, with the check drawing itself
+# in; it was an SF Symbol and before that a Nerd Font glyph.
+# Sizing follows the Claude badge: `width` is the image's width in points,
+# scale 0.5 for the 2x render, label paddings pinned to 0 for the
+# menubar_reveal.sh reason given there.
+# `padding_right` places it; see the spacing note above the battery.
+sketchybar --add item tailscale right \
+  --set tailscale \
+    display=1 \
+    update_freq=5 \
+    width=18 \
+    icon.drawing=off \
+    icon.padding_left=0 \
+    icon.padding_right=0 \
+    padding_left="${PAD_L[tailscale]}" \
+    padding_right="${PAD_R[tailscale]}" \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    script="$PLUGIN_DIR/tailscale.sh" \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.height=18 \
+    background.image.drawing=on \
+    background.image.scale=0.5 \
+    popup.align=right \
+    popup.y_offset="$CARD_Y_OFFSET" \
+    popup.height="$CARD_ROW_HEIGHT" \
+    popup.background.drawing=on \
+    popup.background.color="$PILL_COLOR" \
+    popup.background.border_width=1 \
+    popup.background.border_color="$BORDER_COLOR" \
+    popup.background.corner_radius=12 \
+    popup.background.shadow.drawing=on \
+    popup.background.shadow.color="$SHADOW_COLOR" \
+    popup.background.shadow.distance=4 \
+    popup.background.shadow.angle=270 \
+    click_script="$PLUGIN_DIR/card_click.sh tailscale" \
+  --subscribe tailscale system_woke
+
+# What the shield cannot say, plus the two things worth doing from here: the
+# exit node row turns the exit node on or off (tailscale.sh exit), the last row
+# connects or disconnects the tunnel (tailscale.sh toggle), and the others open
+# the app. The tunnel row is an optional SSH port forward from local.sh
+# (TUNNEL_AGENT), switched hard on and off through launchd (tailscale.sh
+# tunnel); without it the row stays hidden. The first three rows are in the same two-column shape as the
+# Claude popup: grey context on the left, the answer in white on the right,
+# right-aligned so the values line up in a column down the card. Clicking the
+# shield opens and closes it; see the note on the Claude rows for why this is
+# not a hover.
+#
+# Slot widths rather than item width, and `y_offset=0` against the `--default`
+# of 16: see the note on the Claude rows, both traps are the same here.
+#
+# Widths shared with the other cards; see CARD_CONTEXT_WIDTH in colors.sh.
+for row in state since address exit tunnel toggle; do
+  sketchybar --add item "tailscale.$row" popup.tailscale \
+    --set "tailscale.$row" \
+      y_offset=0 \
+      icon.drawing=on \
+      icon.width="$CARD_CONTEXT_WIDTH" \
+      icon.align=left \
+      icon.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      icon.color="$MUTED_COLOR" \
+      icon.padding_left="$CARD_TEXT_PAD" \
+      icon.padding_right=0 \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      label.color="$TEXT_COLOR" \
+      label.width="$CARD_VALUE_WIDTH" \
+      label.align=right \
+      label.padding_left=0 \
+      label.padding_right="$CARD_TEXT_PAD" \
+      background.drawing=off \
+      click_script="$(case "$row" in
+        toggle) print -r -- "$PLUGIN_DIR/tailscale.sh toggle" ;;
+        exit)   print -r -- "$PLUGIN_DIR/tailscale.sh exit" ;;
+        tunnel) print -r -- "$PLUGIN_DIR/tailscale.sh tunnel" ;;
+        *)      print -r -- "/usr/bin/open -a Tailscale" ;;
+      esac)"
+done
+
+# Claude Code usage, drawn as a burst that goes out ray by ray over the session.
+# Added after tailscale so it lands to the shield's left, and sized to sit beside
+# it as a second status badge rather than as a second kind of thing.
+#
+# The mark is a PNG from assets/usagemark rather than a glyph, so neither `icon`
+# nor `label` is ever drawn here. Both paddings are pinned to 0 for the reason
+# given above the media items: menubar_reveal.sh restores with a blanket
+# `label.drawing=on`, and an empty label that is drawing still holds its padding.
+#
+# `width=16` is not decoration, it is the rendered image's exact width in points.
+# SketchyBar does not clip `background.image` to the item box, so an item
+# narrower than its image reports the image's rect and draws over its
+# neighbours. Change one and change the other; the size lives in usagemark.swift.
+#
+# `background.image.scale=0.5` with no corner radius: the PNG is drawn at two
+# pixels per point, so it is crisp on the Retina panel, and it already carries
+# its own shape, so there is nothing to round off.
+#
+# `drawing=off` at birth. The image is one of a hundred states and only the
+# plugin knows which, so the item stays empty until the first tick rather than
+# flashing a stale mark at every reload, and stays off when a lookup fails.
+#
+# 300s, up from 120. The endpoint rate-limits harder than expected: a single
+# curl that returned 200 was followed a minute later by a 429 on the next poll,
+# so the budget is small and it is shared with whatever else asks. Five minutes
+# still resolves a five-hour window finely enough to act on, and the card carries
+# the reset times for anyone who wants the exact edge. system_woke matters too:
+# the lid can be shut across most of a session, and the mark would otherwise sit
+# on a pre-sleep value until the next tick.
+sketchybar --add item claude right \
+  --set claude \
+    drawing=off \
+    display=1 \
+    update_freq=300 \
+    width=18 \
+    icon.drawing=off \
+    icon.padding_left=0 \
+    icon.padding_right=0 \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    padding_left="${PAD_L[claude]}" \
+    padding_right="${PAD_R[claude]}" \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.height=18 \
+    background.image.drawing=on \
+    background.image.scale=0.5 \
+    background.corner_radius=11 \
+    popup.align=right \
+    popup.y_offset="$CARD_Y_OFFSET" \
+    popup.height="$CARD_ROW_HEIGHT" \
+    popup.background.drawing=on \
+    popup.background.color="$PILL_COLOR" \
+    popup.background.border_width=1 \
+    popup.background.border_color="$BORDER_COLOR" \
+    popup.background.corner_radius=12 \
+    popup.background.shadow.drawing=on \
+    popup.background.shadow.color="$SHADOW_COLOR" \
+    popup.background.shadow.distance=4 \
+    popup.background.shadow.angle=270 \
+    script="$PLUGIN_DIR/claude_usage.sh" \
+    click_script="$PLUGIN_DIR/card_click.sh claude" \
+  --subscribe claude system_woke
+
+# What the badge cannot say. The burst is eight rays of one number; these two
+# rows are the numbers it was made from, plus when each of them comes back.
+#
+# Opened by clicking the badge (plugins/card_click.sh), closed by clicking it
+# again or leaving it, driven by assets/hoverwatch.swift rather than by
+# SketchyBar's own mouse events, which are not usable on this bar: measured with
+# a probe item and the pointer parked on it, thirteen `mouse.exited` in three
+# seconds and no `mouse.entered` at all, because the Now Playing disc spins at
+# 24fps and every frame re-evaluates hover. Alt-click opens the usage page.
+#
+# A popup rather than a widening item: the detail is two lines of text, and any
+# item that grows would shove the clock sideways every time it opened.
+#
+# Both rows are filled by claude_usage.sh from the last poll, never on click, so
+# the popup opens full rather than filling in a beat later. They carry no value
+# here at all, not even a placeholder: an unfilled popup should not open, and the
+# script only opens it when it has something to put in it.
+#
+# Three numbers are load-bearing here and none of them are free choice.
+#
+# `popup.height=26` on the parent sets the row band, and doubles as the card's
+# vertical padding: the popup fill wraps the rows exactly, so the only air above
+# the first line and below the last is whatever the band leaves around the text.
+# Left out it is the bar's own height, and the bar is a 66pt transparent
+# container, so two rows of 12pt text came out as a card the height of three
+# lines with both of them stranded at the top of their own band.
+#
+# `y_offset=0` on the rows, against the `--default` of 16. That default exists to
+# pull items up into the top 34pt of that same 66pt band, and inside a popup
+# there is no band to pull out of: it just pushed the text off its row.
+#
+# The two columns are aligned by `icon.width` and `label.width`, not by the
+# item's own `width`. That was the whole bug behind the first two attempts at
+# this popup: `label.align=right` aligns text inside the label's box, and that
+# box is only as wide as the text unless it is told otherwise, so widening the
+# item just padded the row on the outside and left the grey context and the
+# white number touching in the middle. Fixed slot widths also keep the numbers
+# in a column across both rows, which is the point of stacking them.
+#
+# The widths come from colors.sh and are shared with the other cards, so the row
+# does not change shape as the pointer moves from one badge to the next.
+for row in session week; do
+  sketchybar --add item "claude.$row" popup.claude \
+    --set "claude.$row" \
+      y_offset=0 \
+      icon.drawing=on \
+      icon.width="$CARD_CONTEXT_WIDTH" \
+      icon.align=left \
+      icon.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      icon.color="$MUTED_COLOR" \
+      icon.padding_left="$CARD_TEXT_PAD" \
+      icon.padding_right=0 \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      label.color="$TEXT_COLOR" \
+      label.width="$CARD_VALUE_WIDTH" \
+      label.align=right \
+      label.padding_left=0 \
+      label.padding_right="$CARD_TEXT_PAD" \
+      background.drawing=off \
+      click_script="/usr/bin/open 'https://claude.ai/settings/usage'"
+done
+
+# No values here, not even placeholders. claude_usage.sh fills both slots on
+# every poll and the popup is only opened once it has something to show, so a
+# row seeded with dashes would be a state nobody ever sees.
+
+# Vitals, between the keep-awake capsule and the Claude burst: how hard the Mac
+# is working, as a pixel ghost after NeoHtop's (assets/vitalsmark) whose colour
+# is a heat score, the worse of CPU and memory, teal idle to red maxed out.
+# Still at rest; on a change the colour eases round the wheel. Click for the card with
+# the numbers, right-click for Vitals itself (com.forestudio.Vitals). See
+# plugins/vitals.sh.
+sketchybar --add item vitals right \
+  --set vitals \
+    display=1 \
+    update_freq=5 \
+    width=18 \
+    icon.drawing=off \
+    icon.padding_left=0 \
+    icon.padding_right=0 \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    padding_left="${PAD_L[vitals]}" \
+    padding_right="${PAD_R[vitals]}" \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.height=18 \
+    background.image.drawing=on \
+    background.image.scale=0.5 \
+    script="$PLUGIN_DIR/vitals.sh" \
+    popup.align=right \
+    popup.y_offset="$CARD_Y_OFFSET" \
+    popup.height="$CARD_ROW_HEIGHT" \
+    popup.background.drawing=on \
+    popup.background.color="$PILL_COLOR" \
+    popup.background.border_width=1 \
+    popup.background.border_color="$BORDER_COLOR" \
+    popup.background.corner_radius=12 \
+    popup.background.shadow.drawing=on \
+    popup.background.shadow.color="$SHADOW_COLOR" \
+    popup.background.shadow.distance=4 \
+    popup.background.shadow.angle=270 \
+    click_script="$PLUGIN_DIR/card_click.sh vitals" \
+  --subscribe vitals system_woke
+
+for row in cpu memory pressure busiest open; do
+  sketchybar --add item "vitals.$row" popup.vitals \
+    --set "vitals.$row" \
+      y_offset=0 \
+      icon.drawing=on \
+      icon.width="$CARD_CONTEXT_WIDTH" \
+      icon.align=left \
+      icon.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      icon.color="$MUTED_COLOR" \
+      icon.padding_left="$CARD_TEXT_PAD" \
+      icon.padding_right=0 \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      label.color="$TEXT_COLOR" \
+      label.width="$CARD_VALUE_WIDTH" \
+      label.align=right \
+      label.padding_left=0 \
+      label.padding_right="$CARD_TEXT_PAD" \
+      background.drawing=off \
+      click_script="$PLUGIN_DIR/vitals.sh open"
+done
+
+# Keep this Mac awake, at the left end of the badge pill: a drawn capsule
+# (assets/capsulemark) after Amphetamine's, an empty grey outline when off,
+# amber and white when on. Click opens a card with how long it has been on and since
+# when; right-click toggles it. On holds caffeinate's display and idle
+# assertions and also switches the screen saver off, restoring its old timeout
+# when the capsule goes off; see plugins/caffeinate.sh. The 10s poll is only there
+# to notice caffeinate ending some other way.
+sketchybar --add item caffeinate right \
+  --set caffeinate \
+    display=1 \
+    update_freq=10 \
+    width=18 \
+    icon.drawing=off \
+    icon.padding_left=0 \
+    icon.padding_right=0 \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    padding_left="${PAD_L[caffeinate]}" \
+    padding_right="${PAD_R[caffeinate]}" \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.height=18 \
+    background.image.drawing=on \
+    background.image.scale=0.5 \
+    popup.align=left \
+    popup.y_offset="$CARD_Y_OFFSET" \
+    popup.height="$CARD_ROW_HEIGHT" \
+    popup.background.drawing=on \
+    popup.background.color="$PILL_COLOR" \
+    popup.background.border_width=1 \
+    popup.background.border_color="$BORDER_COLOR" \
+    popup.background.corner_radius=12 \
+    popup.background.shadow.drawing=on \
+    popup.background.shadow.color="$SHADOW_COLOR" \
+    popup.background.shadow.distance=4 \
+    popup.background.shadow.angle=270 \
+    script="$PLUGIN_DIR/caffeinate.sh" \
+    click_script="$PLUGIN_DIR/card_click.sh caffeinate" \
+  --subscribe caffeinate system_woke
+
+# The capsule's card: the session and how long it has been on, since when, the screen
+# saver, and a row that switches it. Off, it is the first row and the switch.
+# Aligned left, not right like the others: the capsule is the pill's first badge,
+# so a right-aligned card would hang out past the pill's left end.
+for row in state since screen toggle; do
+  sketchybar --add item "caffeinate.$row" popup.caffeinate \
+    --set "caffeinate.$row" \
+      y_offset=0 \
+      icon.drawing=on \
+      icon.width="$CARD_CONTEXT_WIDTH" \
+      icon.align=left \
+      icon.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      icon.color="$MUTED_COLOR" \
+      icon.padding_left="$CARD_TEXT_PAD" \
+      icon.padding_right=0 \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      label.color="$TEXT_COLOR" \
+      label.width="$CARD_VALUE_WIDTH" \
+      label.align=right \
+      label.padding_left=0 \
+      label.padding_right="$CARD_TEXT_PAD" \
+      background.drawing=off \
+      click_script="$([[ "$row" == toggle ]] && print -r -- "$PLUGIN_DIR/caffeinate.sh toggle")"
+done
+
+# OrbStack, leftmost in the badge pill and only there while the app runs:
+# plugins/orbstack.sh hides it the moment OrbStack quits, and a hidden member
+# drops out of the bracket, so the pill closes up around the other three.
+#
+# Sized and placed like the other drawn badges. The orb (assets/orbmark) is
+# 12pt across, centred, so its ink runs from 2pt to 14pt of its 16pt box, so its padding_left is the pill inset less
+# 2, and its padding_right is what leaves ITEM_GAP to the coffee cup, derived
+# the same way as the others (see the spacing note above the battery).
+sketchybar --add item orbstack right \
+  --set orbstack \
+    drawing=off \
+    display=1 \
+    update_freq=5 \
+    width=18 \
+    icon.drawing=off \
+    icon.padding_left=0 \
+    icon.padding_right=0 \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    padding_left="${PAD_L[orbstack]}" \
+    padding_right="${PAD_R[orbstack]}" \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.height=18 \
+    background.image.drawing=on \
+    background.image.scale=0.5 \
+    popup.align=right \
+    popup.y_offset="$CARD_Y_OFFSET" \
+    popup.height="$CARD_ROW_HEIGHT" \
+    popup.background.drawing=on \
+    popup.background.color="$PILL_COLOR" \
+    popup.background.border_width=1 \
+    popup.background.border_color="$BORDER_COLOR" \
+    popup.background.corner_radius=12 \
+    popup.background.shadow.drawing=on \
+    popup.background.shadow.color="$SHADOW_COLOR" \
+    popup.background.shadow.distance=4 \
+    popup.background.shadow.angle=270 \
+    script="$PLUGIN_DIR/orbstack.sh" \
+    click_script="$PLUGIN_DIR/card_click.sh orbstack" \
+  --subscribe orbstack system_woke
+
+# The card: OrbStack itself, one row per machine and Compose project, and a
+# quit row at the bottom. Every row is a button, which is the point of this
+# card rather than the others: the header opens OrbStack, the last row quits
+# it, and a machine or project row has
+# two halves: its name opens its site in the browser, starting it first if it
+# is stopped, and its state starts or stops it. Rows are slots the plugin fills
+# and hides, because the number of projects changes and SketchyBar cannot add
+# popup members from a poll without the card resizing in front of you.
+# The running machines and projects, then "Nothing running" when there are
+# none, then Quit all. orbstack.sh shows the rows in use.
+orb_rows=()
+for (( i = 0; i < 20; i++ )); do orb_rows+=("row.$i"); done
+orb_rows+=(empty quit)
+for row in "${orb_rows[@]}"; do
+  case "$row" in
+    empty)  action="open" ;;
+    quit)   action="quit" ;;
+    *)      action="click ${row#row.}" ;;
+  esac
+  sketchybar --add item "orbstack.$row" popup.orbstack \
+    --set "orbstack.$row" \
+      drawing=$([[ "$row" == quit ]] && print on || print off) \
+      y_offset=0 \
+      icon.drawing=on \
+      icon.width="$CARD_CONTEXT_WIDTH" \
+      icon.align=left \
+      icon.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      icon.color="$MUTED_COLOR" \
+      icon.padding_left="$CARD_TEXT_PAD" \
+      icon.padding_right=0 \
+      label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$CARD_FONT_SIZE" \
+      label.color="$TEXT_COLOR" \
+      label.width="$CARD_VALUE_WIDTH" \
+      label.align=right \
+      label.padding_left=0 \
+      label.padding_right="$CARD_TEXT_PAD" \
+      background.drawing=off \
+      click_script="$PLUGIN_DIR/orbstack.sh $action"
+done
+
+# `display=1` keeps this off every screen but the main one. SketchyBar numbers
+# displays the way macOS arranges them, so 1 is the display carrying the menu
+# bar; `display=main` is not a value it understands and silently draws nowhere,
+# which is worth knowing before trying it. Workspaces, the app label and the
+# clock stay on every screen, because those describe the screen they are on. The
+# player and the badges describe the machine, and one machine does not need
+# saying three times.
+#
+# Now Playing sits in its own pill on the left, directly beside the workspace
+# pill, as of 2026-09-25. It lived in the centre from 2026-09-07 until then. The
+# move puts the two things that describe what you are doing side by side on the
+# left, and leaves the right-hand end to the things you act on: the badges and
+# the clock.
+#
+# Left items lay out in order of addition, left to right, so these come after
+# the app label and the disc is added first and reads disc then title.
+#
+# The centre placement needed plugins/media_notch.sh, which dropped the pill
+# below the MacBook notch whenever the panel was the only display, because the
+# true centre of that bar is exactly where the notch is. Nothing on the left
+# sits under the notch, so the plugin and its watcher item are gone; they are in
+# the history for the day the pill moves back.
+#
+# Title and artist are **two items**, not two slots on one item. They were one
+# item until 2026-09-07, using `icon` as a second text field because a SketchyBar
+# label is a single colour with no rich text. They had to split because
+# `click_script` is per item and the two now do different things: the disc and
+# title toggle play/pause, the artist opens Spotify.
+#
+# mediawatch owns both values, and hides `media_artist` outright when a track has
+# no artist rather than leaving an empty slot holding padding. During Spotify DJ
+# speech it hides the title, separator and artist and shows `media_wave` in their
+# place; `media_disc` stays drawn and spinning, so the pill never empties out.
+#
+# **Add order is layout order** inside a position, which is why `media_wave` is
+# added after `media_disc` and not before. Added first, it drew to the disc's
+# left and pushed the cover onto the pill's right edge, half of it hanging off
+# the rounded end.
+#
+# The 204 below is only a fallback. It used to be described as matching the track
+# items so the pill would not jump, which was never true: the four track items
+# are auto-sized, so the pill is however wide the title happens to make it.
+# Measured against real tracks that was 174, 210, 223, 267 and 345pt. mediawatch
+# reads the pill's real width back off the bracket with `--query` and renders the
+# waveform 2pt under it, so this value only applies if that measurement fails.
+# The pill, not the text run: the cover is hidden for a DJ segment, so the wave is
+# the bracket's only member and has to cover the disc's slot as well.
+#
+# The width must always match the rendered image's width. SketchyBar does not
+# clip `background.image` to the item box: a 204px image in a 60pt item reports a
+# 204pt rect and draws straight over its neighbours.
+# Zero label padding on the two items that draw their text through `icon` or an
+# image, and never through `label`. `label.drawing=off` is not enough on its own:
+# menubar_reveal.sh restores with a blanket `--set '/.*/' label.drawing=on`, which
+# switches these back on, and an empty label that is drawing still holds its
+# padding. That phantom padding was making the centre pill lead 7pt wider than it
+# trailed. With the padding at 0 the drawing flag stops mattering.
+# The gap between the workspace pill and the media pill. A spacer item rather
+# than padding on either neighbour: the cover has an explicit `width`, and an
+# item with one swallows its own `padding_left`, so the gap has to be an item of
+# its own. Same reasoning, and same `width` trap, as `left_pad` above. On the
+# other screens the media pill does not exist and this is trailing air nobody
+# can see.
+#
+# Its width is the clear desktop between the two pills, measured on screen
+# border to border, so it is ITEM_GAP itself: the same air as between the badges.
+sketchybar --add item pill_gap left \
+  --set pill_gap \
+    display=1 \
+    icon.drawing=off \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    width="$ITEM_GAP" \
+    padding_left=0 \
+    padding_right=0 \
+    background.drawing=off
+
+# padding_left 10, like every pill's first member: the cover then sits 9.5pt
+# inside the capsule, where the workspace chip, the other circle at a pill's
+# end, sits too. At 8 it was 7.5, visibly tighter at one end than the other.
+# The slot has an explicit width, so the padding slides the cover rather than
+# widening the pill; the title's own padding moved up by the same 2 to keep the
+# gap between them.
+sketchybar --add item media_disc left \
+  --set media_disc \
+    drawing=off \
+    display=1 \
+    width=28 \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    icon.drawing=off \
+    padding_left=10 \
+    padding_right=3 \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.height=24 \
+    background.corner_radius=12 \
+    background.image.drawing=on \
+    background.image.scale="$MEDIA_DISC_SCALE" \
+    background.image.corner_radius=12 \
+    script="$PLUGIN_DIR/media_controls.sh" \
+    click_script="$PLUGIN_DIR/card_click.sh media_pill"
+
+sketchybar --add item media_wave left \
+  --set media_wave \
+    drawing=off \
+    display=1 \
+    width=204 \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    icon.drawing=off \
+    icon.padding_left=0 \
+    icon.padding_right=0 \
+    background.drawing=on \
+    background.color="$TRANSPARENT" \
+    background.height=24 \
+    background.image.drawing=on \
+    background.image.scale=1.0 \
+    click_script="$PLUGIN_DIR/card_click.sh media_pill"
+
+sketchybar --add item media left \
+  --set media \
+    drawing=off \
+    display=1 \
+    label.drawing=off \
+    label.padding_left=0 \
+    label.padding_right=0 \
+    icon.drawing=on \
+    icon.font="$BAR_FONT:$BAR_FONT_WEIGHT:$BAR_FONT_SIZE" \
+    icon.color="$MEDIA_COLOR" \
+    icon.padding_left=9 \
+    icon.padding_right=0 \
+    click_script="$PLUGIN_DIR/card_click.sh media_pill"
+
+# The `~` between title and artist is its own item, for the same reason the title
+# and artist are two items: it needs treatment neither of them wants. Its own
+# colour (dimmer than both, see MEDIA_SEP_COLOR), and no click_script, so the
+# separator is not a target that opens Spotify.
+#
+# Symmetric by padding rather than by spaces in the string. 7pt on each side of
+# the glyph here, with `media` at icon.padding_right=0 and `media_artist` at
+# label.padding_left=0, puts an identical 9pt gap on both sides once the 1pt
+# item paddings are counted. A "~ " prefix on the artist label instead would
+# give 7pt on the left and one space character (~3.6pt) on the right, and that
+# lopsidedness is visible at this size.
+#
+# Drawn and hidden by mediawatch alongside media_artist: a separator with nothing
+# on the far side of it is worse than no separator.
+sketchybar --add item media_sep left \
+  --set media_sep \
+    drawing=off \
+    display=1 \
+    icon.drawing=off \
+    label="~" \
+    label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$BAR_FONT_SIZE" \
+    label.color="$MEDIA_SEP_COLOR" \
+    label.padding_left=7 \
+    label.padding_right=7 \
+    click_script="$PLUGIN_DIR/card_click.sh media_pill"
+
+sketchybar --add item media_artist left \
+  --set media_artist \
+    drawing=off \
+    display=1 \
+    icon.drawing=off \
+    label.max_chars="$MEDIA_LABEL_MAX" \
+    label.font="$BAR_FONT:$BAR_FONT_WEIGHT:$BAR_FONT_SIZE" \
+    label.color="$MEDIA_ARTIST_COLOR" \
+    label.padding_left=0 \
+    label.padding_right="$PILL_TEXT_PAD" \
+    click_script="$PLUGIN_DIR/card_click.sh media_pill"
+
+# The three pills. Brackets have to come last because they can only group items
+# that already exist. Negative background padding widens the fill past the outer
+# labels so the text is not crowded against the corner radius.
+#
+# **A bracket's `bounding_rects` reports the span of its members, not the fill it
+# draws.** The real gap at each end is that span plus the matching negative
+# padding, so reading the query alone understates both ends by 6pt. Worth knowing
+# before trying to measure any of this: the left pill once measured symmetric
+# while reading 9pt lopsided on screen.
+#
+# All three pills land on the same 16pt inner inset, and it is built rather than
+# tuned: this shared -6 plus exactly 10pt of padding on the first and last member
+# of every pill. No per-pill overrides, so the ends cannot drift apart.
+#
+# 16 is set by the left pill and is not free choice. The active workspace chip is
+# a filled circle sitting in a 15pt corner radius, and a circle needs more
+# clearance from that arc than text does; see the LEADING_PAD note above.
+#
+# The 10 lives on the members, not on the bracket, because the bracket wraps each
+# member's whole box. Widening the fill leftward instead is not an option: the bar
+# margin is 10pt, so a more negative padding_left runs the fill off the screen
+# edge rather than moving content inward.
+pill=(
+  y_offset="$PILL_Y"
+  background.drawing=on
+  background.color="$PILL_COLOR"
+  background.border_width=1
+  background.border_color="$BORDER_COLOR"
+  background.height="$PILL_HEIGHT"
+  background.corner_radius="$PILL_RADIUS"
+  background.padding_left=-6
+  background.padding_right=-6
+  background.shadow.drawing=on
+  background.shadow.color="$SHADOW_COLOR"
+  background.shadow.distance=3
+  background.shadow.angle=270
+)
+
+# The badges that are off go now, with their cards, before the first script
+# runs: SketchyBar runs none until the `--update` at the end, so a badge that is
+# off never polls, never reads a login and never shows. Taken out here rather
+# than wrapped in a condition each, because each is a long block of item, card
+# rows and notes, and one loop is the one place to read.
+for b in "${BADGE_ORDER[@]}"; do
+  # The badge, then its card rows. SketchyBar's patterns are plain: no anchors
+  # or groups, which is why it is two.
+  badge_on "$b" || sketchybar --remove "$b" --remove "/$b\..*/" 2>/dev/null
+done
+badges_on=()
+for b in "${BADGE_ORDER[@]}"; do badge_on "$b" && badges_on+=("$b"); done
+
+sketchybar --add bracket left_pill left_pad '/workspace\..*/' '/front_app\..*/' \
+  --set left_pill "${pill[@]}"
+
+sketchybar --add bracket media_pill media_wave media_disc media media_sep media_artist \
+  --set media_pill "${pill[@]}" \
+    display=1 \
+    popup.align=center \
+    popup.y_offset="$CARD_Y_OFFSET" \
+    popup.height=30 \
+    popup.horizontal=on \
+    popup.background.drawing=on \
+    popup.background.color="$PILL_COLOR" \
+    popup.background.border_width=1 \
+    popup.background.border_color="$BORDER_COLOR" \
+    popup.background.corner_radius=15 \
+    popup.background.shadow.drawing=on \
+    popup.background.shadow.color="$SHADOW_COLOR" \
+    popup.background.shadow.distance=4 \
+    popup.background.shadow.angle=270
+
+sketchybar --add bracket right_pill clock \
+  --set right_pill "${pill[@]}"
+
+# The three badges get a pill of their own, the same chrome as the others, so
+# the right end reads as two capsules rather than a capsule and three loose
+# marks. Main display only, like the badges it holds.
+sketchybar --add bracket badge_pill "${badges_on[@]}" \
+  --set badge_pill "${pill[@]}" \
+    display=1
+
+# The bar sits under the native menu bar, so something has to notice the hover
+# reveal and get the bar out of the way. SketchyBar has no event for it.
+#
+"$PLUGIN_DIR/menubar_watch.sh"
+
+# After a display change or a wake, both pointer watchers get a clean start
+# once the displays have settled; see plugins/display_settle.sh. Restarting on
+# the first display_change, mid lid-change, left menubarwatch measuring a
+# layout that was already gone: the bar receded at random and cards shut.
+sketchybar --add item display_settle left \
+  --set display_settle drawing=off updates=on width=0 \
+    script="$PLUGIN_DIR/display_settle.sh" \
+  --subscribe display_settle display_change system_woke
+
+# And every 20 seconds regardless: a pill stacked over its badges, or workspace
+# chips left on a screen that is gone, healed within moments rather than at the
+# next screen change. See plugins/bar_health.sh.
+sketchybar --add item bar_health left \
+  --set bar_health drawing=off updates=on width=0 update_freq=20 \
+    script="$PLUGIN_DIR/bar_health.sh"
+
+# The popup cards: opened by a click, closed when the pointer leaves. A separate
+# watcher because SketchyBar's own mouse events are not usable here; see
+# assets/hoverwatch.swift for the measurement. Started after the two other watchers and before the brackets,
+# which is fine: it queries the bar for its rectangles rather than being told
+# them, so it does not care what exists yet.
+"$PLUGIN_DIR/hover_watch.sh"
+
+# The badges' transitions between states; see assets/motionwatch.swift.
+# Started before the badge plugins first run, so a change on the first poll
+# already animates.
+"$PLUGIN_DIR/motion_watch.sh"
+
+# Transport controls, on the card that clicking the pill opens. Alt-clicking the
+# pill plays or pauses, the division the whole bar follows: click to see,
+# alt-click to act. Both routed through hoverwatch, so the card has one owner:
+# when a click toggle and hoverwatch drove the same flag from opposite ends, a
+# click to close was undone by the next poll a frame later.
+#
+# It hangs off the bracket, not off any one item in it, and that is the whole
+# trick to centring it. A popup can only be aligned left, centre or right of its
+# parent and there is no x offset, so centred on the cover it opened 68pt clear
+# of the pill's left edge, and centred on the title it drifted with the track:
+# right of centre for a podcast with no artist, left of centre for a song with
+# one. The bracket *is* the pill, so centred on that it is centred full stop.
+#
+# Which is why this block sits at the very bottom of the file. A bracket can only
+# be declared once its members exist, and a popup member can only be attached to
+# a parent that already exists, so the order is members, bracket, then these.
+#
+# `popup.horizontal=on`, so this card is a strip rather than a stack. It is the
+# only horizontal popup here, and it is what makes five glyphs read as a
+# transport instead of as five menu entries.
+#
+# `y_offset=-4` on every button, against the text popups' 0. These glyphs carry
+# a much taller ascent than a line of Avenir, so centred on the row's baseline
+# they hung out through the top of the card; the nudge puts the drawn shape in
+# the middle rather than the box it is measured in.
+#
+# They are named `transport.*` and not `media.*`. Nothing drives `/^media/` any
+# more, but something did once, and the name that bit then would bite again the
+# moment anything does. The popup parent is `popup.media_pill`.
+#
+# `label.drawing=off` with both paddings at 0 on every button, for the reason the
+# media items carry it: menubar_reveal.sh restores with a blanket
+# `label.drawing=on`, and an empty label that is drawing still holds its padding,
+# which would space the strip out unevenly the first time the menu bar is peeked.
+#
+# Shuffle and repeat are actions with no state shown. media-control does not
+# report either one, so lighting them would be a guess; see media_controls.sh.
+# Name, glyph, action, read three at a time. An action is either a
+# media-control command or, for the last button, `spotify`.
+#
+# The glyphs are literal characters in this file, not `$'\\U000F04AE'` escapes.
+# zsh only decodes \\U inside $'...' *and* only when the locale can encode the
+# result. The LaunchAgent hands the daemon a LANG, so at login an escape would
+# survive; a `sketchybar --reload` typed into a shell without one dies on
+# "character not in range" and takes the whole rc with it. A literal character
+# needs no locale either way.
+#
+# Order is transport, divider, modes. The three that move the music sit together
+# on the left where the hand goes first, and the two that change how it plays
+# are behind a hairline with the one that leaves for the app.
+transport_buttons=(
+  prev       󰒮 previous-track
+  playpause  󰐊 toggle-play-pause
+  next       󰒭 next-track
+  divider    -      -
+  shuffle    󰒟 toggle-shuffle
+  repeat     󰑖 toggle-repeat
+)
+
+# `popup.height` sets the row band and `y_offset=0` leaves the glyphs centred in
+# it. An earlier revision carried -4 to rescue a strip that was drawing clipped
+# through the top of its own card, which turned out to be the naming problem
+# below rather than a metrics problem: the offset was never 0 at all, it was the
+# 16 these items inherited while they matched `/^media/`. With the names fixed
+# the nudge stopped being a correction and started being a 4pt drop.
+#
+# They are named `transport.*` and not `media.*`. A `/^media/` selector once
+# swallowed them whole and drew the strip clipped through the top of its own
+# card; nothing uses one now, but the name costs nothing to keep safe. The popup
+# parent is `popup.media_pill`.
+for (( i = 1; i <= ${#transport_buttons}; i += 3 )); do
+  name="${transport_buttons[i]}"
+  glyph="${transport_buttons[i + 1]}"
+  command="${transport_buttons[i + 2]}"
+
+  if [[ "$name" == divider ]]; then
+    # A drawn hairline rather than a glyph or a gap. A "|" in this font is taller
+    # than the buttons and reads as one more symbol in a row of symbols, and
+    # empty space alone cannot separate two groups that are already evenly
+    # spaced.
+    sketchybar --add item transport.divider popup.media_pill \
+      --set transport.divider \
+        y_offset=0 \
+        width=1 \
+        padding_left=7 \
+        padding_right=7 \
+        icon.drawing=off \
+        label.drawing=off \
+        label.padding_left=0 \
+        label.padding_right=0 \
+        background.drawing=on \
+        background.color="$BORDER_COLOR" \
+        background.height=14
+    continue
+  fi
+
+  sketchybar --add item "transport.$name" popup.media_pill \
+    --set "transport.$name" \
+      y_offset=0 \
+      width=32 \
+      icon="$glyph" \
+      icon.drawing=on \
+      icon.font="Hack Nerd Font:Bold:15.0" \
+      icon.color="$TEXT_COLOR" \
+      icon.align=center \
+      icon.width=32 \
+      icon.padding_left=0 \
+      icon.padding_right=0 \
+      label.drawing=off \
+      label.padding_left=0 \
+      label.padding_right=0 \
+      background.drawing=off \
+      click_script="$PLUGIN_DIR/media_controls.sh press $command"
+done
+
+# No `media_change` subscription here, though it would be the obvious signal: it
+# never fires on macOS 26, verified with a probe item across a play and a pause.
+# The strip is refreshed by `plugins/on_open_media_pill.sh`, which hoverwatch
+# runs as the card appears.
+
+# The two past the divider step back to grey. They are modes rather than moves
+# and they are the two that cannot show their own state, so keeping them dim
+# leaves the three controls that act on the music now as the only bright run.
+sketchybar --set transport.shuffle icon.color="$MUTED_COLOR" \
+           --set transport.repeat  icon.color="$MUTED_COLOR"
+
+# Run it once at load. An item's
+# script fires on its subscriptions and its own timer, never on `--update`, and
+# this one is on a 120s timer: without this line the badge is simply absent for
+# two minutes after every reload, with nothing on the bar to click. Backgrounded
+# because it makes a network call, and a reload should not wait on the internet.
+# The Claude badge retries, the battery does not. Both are kicked here because an
+# item's script never runs on `--update`, but the Claude one reaches the network
+# and the login keychain, and at service start neither is reliably there yet: on
+# a cold `brew services restart` the first attempt came back empty and the badge
+# stayed blank until the next 120s tick. Three tries thirty seconds apart cover
+# the gap, and the script exits non-zero when it could not draw, so a success
+# breaks out immediately.
+#
+# Deliberately not more or faster. The endpoint rate-limits: a morning of reloads
+# while working on this file earned an HTTP 429, which is exactly the failure
+# that used to blank the badge. `CLAUDE_USAGE_DEBUG=1 plugins/claude_usage.sh`
+# prints the reason when it happens again.
+# The Now Playing watcher starts last, after every item it writes exists. It
+# owns the transport strip's play/pause glyph, and started earlier, the strip
+# created further down this file came up with the rc's default glyph over the
+# one mediawatch had already set, and stayed wrong until the next toggle.
+"$PLUGIN_DIR/media_watch.sh"
+
+badge_on claude && ( for attempt in 1 2 3; do
+    "$PLUGIN_DIR/claude_usage.sh"
+    # 0 drew something, 2 is a rate limit and means stop asking. Only a plain
+    # failure is worth another go.
+    [[ $? -ne 1 ]] && break
+    sleep 30
+  done ) &
+for b in battery orbstack caffeinate wifi; do
+  badge_on "$b" && "$PLUGIN_DIR/$b.sh" &
+done
+# Workspaces and app labels at load, rather than at the first focus change.
+"$PLUGIN_DIR/aerospace_sync.sh" &
+
+sketchybar --update

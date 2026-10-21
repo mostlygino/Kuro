@@ -1,0 +1,11 @@
+name: Idea
+description: Something Kuro could do, or do better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like?
+      description: The problem first, then the idea. A sketch or a screenshot of something similar helps.
+    validations:
+      required: true

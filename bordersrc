@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# The focused-window border, drawn by JankyBorders.
+#
+# Built to look like it belongs to the bar above it rather than to a different
+# theme. The bar is graphite pills with a white hairline and white text; the
+# border is that same white, at a width that reads from across the room and no
+# wider. It was a 6pt gold glow before, which was the loudest thing on the
+# screen and the one element that shared no colour with anything else, and a
+# 6pt stroke eats into small windows at the corners.
+#
+# Only the focused window gets one. An unfocused border in any colour answers a
+# question nobody asks, the 16pt gaps already separate the tiles, and the less
+# there is around the others the more the one that matters stands out. It is
+# fully transparent rather than turned off, because borders keeps drawing
+# inactive windows either way and transparent is the one colour that costs
+# nothing to look at.
+#
+# 3pt at 95% white. 2pt was tried first and was right in colour and wrong in
+# weight: on a dark window over a dark wallpaper it read as the window's own
+# edge rather than as a mark of focus. 3 is where it starts to say "this one"
+# from across the room without turning back into a frame. `hidpi=on` so the
+# stroke is drawn at retina resolution on the built-in instead of being
+# upscaled into a soft band.
+options=(
+  style=round
+  width=3.0
+  hidpi=on
+  active_color=0xf2f5f5f7
+  inactive_color=0x00000000
+)
+borders "${options[@]}"

@@ -1,0 +1,36 @@
+.DS_Store
+
+# Per-machine settings; see sketchybar/local.sh.example.
+sketchybar/local.sh
+sketchybar/assets/menubarwatch
+sketchybar/assets/mediawatch
+# Built and signed by plugins/media_watch.sh. The plist it is built from is
+# tracked; the bundle itself is a build artifact.
+sketchybar/assets/mediawatch.app/
+# Compiled by the plugin that needs them, on first run and whenever their source
+# changes. Tracking a binary here would mean every rebuild shows up as a diff of
+# unreadable bytes, and a stale one would silently win over its own source.
+sketchybar/assets/usagemark
+sketchybar/assets/batterymark
+sketchybar/assets/hoverwatch
+sketchybar/assets/vpnmark
+sketchybar/assets/capsulemark
+sketchybar/assets/voidmark
+sketchybar/assets/motionwatch
+sketchybar/assets/orbmark
+sketchybar/assets/ncstate
+sketchybar/assets/wifiinfo.app/
+sketchybar/assets/wifimark
+sketchybar/assets/monthmark
+sketchybar/assets/zorder
+sketchybar/assets/topguard
+sketchybar/assets/vitalsmark
+sketchybar/assets/vitalsinfo
+sketchybar/assets/kbdlight
+# Analysis output, regenerated on demand.
+graphify-out/
+sketchybar/graphify-out/
+sketchybar/assets/graphify-out/
+# The Kuro app, built by scripts/build-app.sh.
+app/.build/
+build/

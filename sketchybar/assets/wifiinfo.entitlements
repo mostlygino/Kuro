@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hardened Runtime blocks Location Services unless the app asks for it here.
+  Without this, macOS never shows the permission prompt and the network name
+  stays unreadable, silently.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.personal-information.location</key>
+	<true/>
+</dict>
+</plist>

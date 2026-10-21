@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kuro · Keys</title>
+<meta name="description" content="Every AeroSpace binding in Kuro, on a keyboard that lights up under the modifiers you hold.">
+<style>
+  :root {
+    --void: #060607;
+    --pill: #1c1c1e;
+    --pill-raised: #232326;
+    --edge: rgba(255, 255, 255, 0.14);
+    --edge-strong: rgba(255, 255, 255, 0.26);
+    --ink: #f5f5f7;
+    --ink-dim: #a1a1a6;
+    --ink-faint: #6e6e73;
+    --focus: #64d2ff;
+    --face: "Avenir Next", "Avenir", -apple-system, "Helvetica Neue", sans-serif;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--void); }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    font: 500 15px/1.5 var(--face);
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(ellipse 60% 42% at 78% 0%, rgba(191, 90, 242, 0.10), transparent 70%),
+      radial-gradient(ellipse 50% 38% at 8% 12%, rgba(100, 210, 255, 0.06), transparent 70%),
+      var(--void);
+  }
+  ::selection { background: rgba(191, 90, 242, 0.42); color: #fff; }
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-thumb { background: #2c2c2f; border-radius: 10px; border: 3px solid var(--void); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 8px; }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 72px 32px 96px; }
+
+  header h1 {
+    margin: 0;
+    font-size: clamp(44px, 7vw, 76px);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  header h1 span { color: var(--ink-faint); font-weight: 500; }
+  header p { margin: 18px 0 0; max-width: 62ch; color: var(--ink-dim); font-size: 17px; }
+  header p kbd { font: inherit; color: var(--ink); }
+
+  /* The modifier switches and the search. */
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;
+    margin: 48px 0 22px;
+  }
+  .mods { display: flex; gap: 8px; }
+  .mod {
+    appearance: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 44px; padding: 0 16px 0 12px;
+    background: var(--pill); color: var(--ink-dim);
+    border: 1px solid var(--edge); border-radius: 22px;
+    font: 600 14px var(--face);
+    transition: background 220ms var(--ease), color 220ms var(--ease), border-color 220ms var(--ease), transform 220ms var(--ease);
+  }
+  .mod b {
+    display: grid; place-items: center; width: 26px; height: 26px; border-radius: 13px;
+    font-size: 15px; background: #2a2a2d; color: var(--ink);
+    transition: background 220ms var(--ease), color 220ms var(--ease);
+  }
+  .mod:hover { border-color: var(--edge-strong); color: var(--ink); }
+  .mod:active { transform: scale(0.97); }
+  .mod[aria-pressed="true"] { background: #2a2a2e; color: var(--ink); border-color: var(--edge-strong); }
+  .mod[aria-pressed="true"] b { background: var(--ink); color: #111; }
+  .search {
+    flex: 1 1 260px; max-width: 360px; height: 44px; padding: 0 18px;
+    background: var(--pill); color: var(--ink); caret-color: var(--focus);
+    border: 1px solid var(--edge); border-radius: 22px;
+    font: 500 15px var(--face);
+    transition: border-color 220ms var(--ease);
+  }
+  .search::placeholder { color: var(--ink-faint); }
+  .search:focus { outline: none; border-color: var(--focus); }
+
+  /* The keyboard. Keys are sized in units of one letter key. */
+  .board {
+    /* Every row is 14.5 keys wide; 16.5 units with the gaps and padding, so
+       the board fills the column exactly. */
+    --u: clamp(30px, calc((min(100vw, 1120px) - 64px) / 16.6), 64px);
+    --gap: calc(var(--u) * 0.1);
+    padding: calc(var(--u) * 0.32);
+    background: linear-gradient(180deg, #151517, #0e0e10);
+    border: 1px solid var(--edge);
+    border-radius: calc(var(--u) * 0.42);
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    width: fit-content; max-width: 100%; margin: 0 auto;
+    overflow-x: auto;
+  }
+  .row { display: flex; gap: var(--gap); margin-bottom: var(--gap); width: max-content; }
+  .row:last-child { margin-bottom: 0; }
+  .key {
+    position: relative;
+    width: calc(var(--u) * var(--w, 1) + var(--gap) * (var(--w, 1) - 1));
+    height: var(--u);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--pill);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: calc(var(--u) * 0.18);
+    color: var(--ink-faint);
+    font: 600 calc(var(--u) * 0.27) var(--face);
+    box-shadow: 0 2px 0 #09090a, 0 3px 6px rgba(0, 0, 0, 0.35);
+    transition: background 260ms var(--ease), color 260ms var(--ease), box-shadow 260ms var(--ease),
+                border-color 260ms var(--ease), transform 260ms var(--ease);
+    transition-delay: var(--delay, 0ms);
+    cursor: default;
+    user-select: none;
+  }
+  .key small {
+    position: absolute; bottom: calc(var(--u) * 0.1); left: 0; right: 0;
+    font: 600 calc(var(--u) * 0.14) var(--face); letter-spacing: 0.02em; text-align: center;
+    color: transparent; transition: color 260ms var(--ease); transition-delay: var(--delay, 0ms);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;
+  }
+  .key.mod-key { color: var(--ink-faint); font-size: calc(var(--u) * 0.22); }
+  .key.held {
+    background: #3a3a3e; color: var(--ink); border-color: var(--edge-strong);
+    transform: translateY(1px); box-shadow: 0 1px 0 #09090a;
+  }
+  .key.lit {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--c) 22%, #1c1c1e);
+    border-color: color-mix(in srgb, var(--c) 55%, transparent);
+    box-shadow: 0 2px 0 #09090a, 0 6px 22px -6px color-mix(in srgb, var(--c) 70%, transparent);
+  }
+  .key.lit small { color: color-mix(in srgb, var(--c) 70%, #fff); }
+  .key.lit:hover { background: color-mix(in srgb, var(--c) 34%, #1c1c1e); }
+  .key.match { transform: translateY(-2px); }
+
+  /* What the lit keys do, and the caption for the key under the pointer. */
+  .under {
+    display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; justify-content: space-between;
+    margin: 20px 4px 0; min-height: 30px;
+  }
+  .readout {
+    display: flex; gap: 12px; align-items: baseline;
+    font-size: 16px; color: var(--ink-dim);
+  }
+  .readout strong { color: var(--ink); font-weight: 600; font-size: 18px; }
+  .readout .combo { font-weight: 600; color: var(--ink); letter-spacing: 0.04em; }
+
+  /* The groups lit under the modifiers held, in their colours. */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center;
+    font-size: 14px; color: var(--ink-dim);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend i {
+    width: 8px; height: 8px; border-radius: 4px; background: var(--c);
+    box-shadow: 0 0 10px var(--c);
+  }
+
+  /* The still for the docs (make_keys.py runs poster()): the keyboard and
+     its legend, nothing that needs a pointer. */
+  body.poster { min-height: 0; }
+  .poster main { padding: 44px 32px 40px; }
+  .poster header, .poster .controls, .poster .readout, .poster .groups,
+  .poster footer, .poster .none { display: none; }
+  .poster .under { justify-content: center; margin-top: 26px; }
+  .poster .legend { font-size: 15px; }
+  .legend b { display: none; }
+  .poster .legend b {
+    display: inline-grid; place-items: center; min-width: 30px; height: 26px; padding: 0 8px;
+    background: #3a3a3e; border: 1px solid var(--edge-strong); border-radius: 7px;
+    color: var(--ink); font-weight: 600; letter-spacing: 0.04em; margin-right: 4px;
+  }
+
+  /* Every binding, by group. */
+  .groups {
+    margin-top: 72px;
+    columns: 3 300px; column-gap: 40px;
+  }
+  /* Padding rather than margin: WebKit carries a margin over a column break,
+     which pushed the second column's first group 40px down. */
+  .group { break-inside: avoid; margin: 0; padding-bottom: 40px; }
+  .group h2 {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 0 12px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-dim);
+  }
+  .group h2 i { width: 8px; height: 8px; border-radius: 4px; background: var(--c); box-shadow: 0 0 12px var(--c); }
+  .binding {
+    display: grid; grid-template-columns: minmax(96px, auto) 1fr; gap: 14px; align-items: baseline;
+    padding: 9px 0; border-top: 1px solid rgba(255, 255, 255, 0.06);
+    transition: opacity 200ms var(--ease);
+  }
+  .binding .keys { font-weight: 600; letter-spacing: 0.05em; white-space: nowrap; color: var(--ink); }
+  .binding .keys span {
+    display: inline-block; min-width: 24px; padding: 1px 7px; margin-right: 3px;
+    text-align: center; background: var(--pill); border: 1px solid var(--edge); border-radius: 7px;
+    font-size: 13px;
+  }
+  .binding .does { color: var(--ink-dim); }
+  .binding .does em { display: block; font-style: normal; font-size: 13px; color: var(--ink-faint); }
+  .binding.dim { opacity: 0.18; }
+  .group.empty { display: none; }
+  .none { display: none; color: var(--ink-faint); margin-top: 48px; }
+
+  footer { margin-top: 32px; color: var(--ink-faint); font-size: 13px; }
+  footer code { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink-dim); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 1ms !important; transition-delay: 0ms !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Keys <span>for Kuro</span></h1>
+    <p>Every AeroSpace binding, with <kbd>⌘</kbd> standing in for Omarchy's Super key. Pick the
+      modifiers, or just hold them, and the keys they unlock light up. Generated from
+      <code>aerospace.toml</code>, so it is always what your Mac does.</p>
+  </header>
+
+  <div class="controls">
+    <div class="mods" role="group" aria-label="Modifiers">
+      <button class="mod" data-mod="ctrl" aria-pressed="false"><b>⌃</b>Control</button>
+      <button class="mod" data-mod="alt" aria-pressed="false"><b>⌥</b>Option</button>
+      <button class="mod" data-mod="shift" aria-pressed="false"><b>⇧</b>Shift</button>
+      <button class="mod" data-mod="cmd" aria-pressed="true"><b>⌘</b>Command</button>
+    </div>
+    <input class="search" type="search" placeholder="Find a binding: stack, resize, screen…" aria-label="Find a binding">
+  </div>
+
+  <div class="board" id="board" aria-label="Keyboard"></div>
+  <div class="under">
+    <div class="readout" id="readout" aria-live="polite"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <section class="groups" id="groups"></section>
+  <p class="none" id="none">Nothing matches that. Try a word like “workspace” or “window”.</p>
+
+  <footer>Generated by <code>docs/make_keys.py</code> from <code>aerospace.toml</code>. <code>⇧⌘/</code> opens this page from anywhere.</footer>
+</main>
+
+<script>
+const GROUPS = [{"name": "Focus", "bindings": [{"key": "cmd-left", "mods": ["cmd"], "base": "left", "does": "Focus the window left", "short": "focus", "note": ""}, {"key": "cmd-down", "mods": ["cmd"], "base": "down", "does": "Focus the window down", "short": "focus", "note": ""}, {"key": "cmd-up", "mods": ["cmd"], "base": "up", "does": "Focus the window up", "short": "focus", "note": ""}, {"key": "cmd-right", "mods": ["cmd"], "base": "right", "does": "Focus the window right", "short": "focus", "note": ""}]}, {"name": "Swap", "bindings": [{"key": "cmd-shift-left", "mods": ["cmd", "shift"], "base": "left", "does": "Swap with the window left", "short": "swap", "note": ""}, {"key": "cmd-shift-down", "mods": ["cmd", "shift"], "base": "down", "does": "Swap with the window down", "short": "swap", "note": ""}, {"key": "cmd-shift-up", "mods": ["cmd", "shift"], "base": "up", "does": "Swap with the window up", "short": "swap", "note": ""}, {"key": "cmd-shift-right", "mods": ["cmd", "shift"], "base": "right", "does": "Swap with the window right", "short": "swap", "note": ""}]}, {"name": "Move the workspace to another screen", "bindings": [{"key": "cmd-shift-alt-left", "mods": ["cmd", "shift", "alt"], "base": "left", "does": "Move the workspace to the screen left", "short": "to screen", "note": ""}, {"key": "cmd-shift-alt-down", "mods": ["cmd", "shift", "alt"], "base": "down", "does": "Move the workspace to the screen down", "short": "to screen", "note": ""}, {"key": "cmd-shift-alt-up", "mods": ["cmd", "shift", "alt"], "base": "up", "does": "Move the workspace to the screen up", "short": "to screen", "note": ""}, {"key": "cmd-shift-alt-right", "mods": ["cmd", "shift", "alt"], "base": "right", "does": "Move the workspace to the screen right", "short": "to screen", "note": ""}]}, {"name": "Stack", "bindings": [{"key": "cmd-alt-left", "mods": ["cmd", "alt"], "base": "left", "does": "Stack with the window left", "short": "stack", "note": ""}, {"key": "cmd-alt-down", "mods": ["cmd", "alt"], "base": "down", "does": "Stack with the window down", "short": "stack", "note": ""}, {"key": "cmd-alt-up", "mods": ["cmd", "alt"], "base": "up", "does": "Stack with the window up", "short": "stack", "note": ""}, {"key": "cmd-alt-right", "mods": ["cmd", "alt"], "base": "right", "does": "Stack with the window right", "short": "stack", "note": ""}]}, {"name": "Window", "bindings": [{"key": "ctrl-alt-backspace", "mods": ["ctrl", "alt"], "base": "backspace", "does": "Close every other window", "short": "others", "note": ""}, {"key": "cmd-t", "mods": ["cmd"], "base": "t", "does": "Float or tile the window", "short": "float", "note": "toggle float/tiling"}, {"key": "cmd-alt-f", "mods": ["cmd", "alt"], "base": "f", "does": "Fullscreen", "short": "full", "note": ""}, {"key": "cmd-j", "mods": ["cmd"], "base": "j", "does": "Flip the split", "short": "flip", "note": "closest match to \"toggle split\""}]}, {"name": "Resize", "bindings": [{"key": "cmd-minus", "mods": ["cmd"], "base": "minus", "does": "Shrink by 50 pt", "short": "−50", "note": ""}, {"key": "cmd-equal", "mods": ["cmd"], "base": "equal", "does": "Grow by 50 pt", "short": "+50", "note": ""}, {"key": "cmd-shift-minus", "mods": ["cmd", "shift"], "base": "minus", "does": "Shrink by 200 pt", "short": "−200", "note": ""}, {"key": "cmd-shift-equal", "mods": ["cmd", "shift"], "base": "equal", "does": "Grow by 200 pt", "short": "+200", "note": ""}]}, {"name": "Workspaces", "bindings": [{"key": "cmd-1", "mods": ["cmd"], "base": "1", "does": "Go to workspace 1", "short": "go 1", "note": ""}, {"key": "cmd-2", "mods": ["cmd"], "base": "2", "does": "Go to workspace 2", "short": "go 2", "note": ""}, {"key": "cmd-3", "mods": ["cmd"], "base": "3", "does": "Go to workspace 3", "short": "go 3", "note": ""}, {"key": "cmd-4", "mods": ["cmd"], "base": "4", "does": "Go to workspace 4", "short": "go 4", "note": ""}, {"key": "cmd-5", "mods": ["cmd"], "base": "5", "does": "Go to workspace 5", "short": "go 5", "note": ""}, {"key": "cmd-6", "mods": ["cmd"], "base": "6", "does": "Go to workspace 6", "short": "go 6", "note": ""}, {"key": "cmd-7", "mods": ["cmd"], "base": "7", "does": "Go to workspace 7", "short": "go 7", "note": ""}, {"key": "cmd-8", "mods": ["cmd"], "base": "8", "does": "Go to workspace 8", "short": "go 8", "note": ""}, {"key": "cmd-9", "mods": ["cmd"], "base": "9", "does": "Go to workspace 9", "short": "go 9", "note": ""}, {"key": "cmd-0", "mods": ["cmd"], "base": "0", "does": "Go to workspace 10", "short": "go 10", "note": ""}, {"key": "cmd-shift-1", "mods": ["cmd", "shift"], "base": "1", "does": "Move the window to workspace 1 and follow", "short": "take 1", "note": ""}, {"key": "cmd-shift-2", "mods": ["cmd", "shift"], "base": "2", "does": "Move the window to workspace 2 and follow", "short": "take 2", "note": ""}, {"key": "cmd-shift-3", "mods": ["cmd", "shift"], "base": "3", "does": "Move the window to workspace 3 and follow", "short": "take 3", "note": ""}, {"key": "cmd-shift-4", "mods": ["cmd", "shift"], "base": "4", "does": "Move the window to workspace 4 and follow", "short": "take 4", "note": ""}, {"key": "cmd-shift-5", "mods": ["cmd", "shift"], "base": "5", "does": "Move the window to workspace 5 and follow", "short": "take 5", "note": ""}, {"key": "cmd-shift-6", "mods": ["cmd", "shift"], "base": "6", "does": "Move the window to workspace 6 and follow", "short": "take 6", "note": ""}, {"key": "cmd-shift-7", "mods": ["cmd", "shift"], "base": "7", "does": "Move the window to workspace 7 and follow", "short": "take 7", "note": ""}, {"key": "cmd-shift-8", "mods": ["cmd", "shift"], "base": "8", "does": "Move the window to workspace 8 and follow", "short": "take 8", "note": ""}, {"key": "cmd-shift-9", "mods": ["cmd", "shift"], "base": "9", "does": "Move the window to workspace 9 and follow", "short": "take 9", "note": ""}, {"key": "cmd-shift-0", "mods": ["cmd", "shift"], "base": "0", "does": "Move the window to workspace 10 and follow", "short": "take 10", "note": ""}, {"key": "cmd-shift-alt-1", "mods": ["cmd", "shift", "alt"], "base": "1", "does": "Move the window to workspace 1, stay here", "short": "send 1", "note": ""}, {"key": "cmd-shift-alt-2", "mods": ["cmd", "shift", "alt"], "base": "2", "does": "Move the window to workspace 2, stay here", "short": "send 2", "note": ""}, {"key": "cmd-shift-alt-3", "mods": ["cmd", "shift", "alt"], "base": "3", "does": "Move the window to workspace 3, stay here", "short": "send 3", "note": ""}, {"key": "cmd-shift-alt-4", "mods": ["cmd", "shift", "alt"], "base": "4", "does": "Move the window to workspace 4, stay here", "short": "send 4", "note": ""}, {"key": "cmd-shift-alt-5", "mods": ["cmd", "shift", "alt"], "base": "5", "does": "Move the window to workspace 5, stay here", "short": "send 5", "note": ""}, {"key": "cmd-shift-alt-6", "mods": ["cmd", "shift", "alt"], "base": "6", "does": "Move the window to workspace 6, stay here", "short": "send 6", "note": ""}, {"key": "cmd-shift-alt-7", "mods": ["cmd", "shift", "alt"], "base": "7", "does": "Move the window to workspace 7, stay here", "short": "send 7", "note": ""}, {"key": "cmd-shift-alt-8", "mods": ["cmd", "shift", "alt"], "base": "8", "does": "Move the window to workspace 8, stay here", "short": "send 8", "note": ""}, {"key": "cmd-shift-alt-9", "mods": ["cmd", "shift", "alt"], "base": "9", "does": "Move the window to workspace 9, stay here", "short": "send 9", "note": ""}, {"key": "cmd-shift-alt-0", "mods": ["cmd", "shift", "alt"], "base": "0", "does": "Move the window to workspace 10, stay here", "short": "send 10", "note": ""}]}, {"name": "Scratch workspace", "bindings": [{"key": "ctrl-alt-s", "mods": ["ctrl", "alt"], "base": "s", "does": "Go to the scratch workspace", "short": "scratch", "note": ""}, {"key": "ctrl-alt-shift-s", "mods": ["ctrl", "alt", "shift"], "base": "s", "does": "Send the window to the scratch workspace", "short": "stash", "note": ""}]}, {"name": "Agent spaces", "bindings": [{"key": "cmd-ctrl-1", "mods": ["cmd", "ctrl"], "base": "1", "does": "Look at agent space F1", "short": "agent", "note": ""}, {"key": "cmd-ctrl-2", "mods": ["cmd", "ctrl"], "base": "2", "does": "Look at agent space F2", "short": "agent", "note": ""}, {"key": "cmd-ctrl-3", "mods": ["cmd", "ctrl"], "base": "3", "does": "Look at agent space F3", "short": "agent", "note": ""}, {"key": "cmd-ctrl-4", "mods": ["cmd", "ctrl"], "base": "4", "does": "Look at agent space F4", "short": "agent", "note": ""}, {"key": "cmd-ctrl-5", "mods": ["cmd", "ctrl"], "base": "5", "does": "Look at agent space F5", "short": "agent", "note": ""}, {"key": "cmd-ctrl-6", "mods": ["cmd", "ctrl"], "base": "6", "does": "Look at agent space F6", "short": "agent", "note": ""}, {"key": "cmd-ctrl-7", "mods": ["cmd", "ctrl"], "base": "7", "does": "Look at agent space F7", "short": "agent", "note": ""}, {"key": "cmd-ctrl-8", "mods": ["cmd", "ctrl"], "base": "8", "does": "Look at agent space F8", "short": "agent", "note": ""}, {"key": "cmd-ctrl-9", "mods": ["cmd", "ctrl"], "base": "9", "does": "Look at agent space F9", "short": "agent", "note": ""}, {"key": "cmd-ctrl-0", "mods": ["cmd", "ctrl"], "base": "0", "does": "Look at agent space F10", "short": "agent", "note": ""}, {"key": "cmd-ctrl-minus", "mods": ["cmd", "ctrl"], "base": "minus", "does": "Look at agent space F11", "short": "agent", "note": ""}, {"key": "cmd-ctrl-equal", "mods": ["cmd", "ctrl"], "base": "equal", "does": "Look at agent space F12", "short": "agent", "note": ""}, {"key": "cmd-ctrl-alt-1", "mods": ["cmd", "ctrl", "alt"], "base": "1", "does": "Send the window to agent space F1, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-2", "mods": ["cmd", "ctrl", "alt"], "base": "2", "does": "Send the window to agent space F2, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-3", "mods": ["cmd", "ctrl", "alt"], "base": "3", "does": "Send the window to agent space F3, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-4", "mods": ["cmd", "ctrl", "alt"], "base": "4", "does": "Send the window to agent space F4, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-5", "mods": ["cmd", "ctrl", "alt"], "base": "5", "does": "Send the window to agent space F5, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-6", "mods": ["cmd", "ctrl", "alt"], "base": "6", "does": "Send the window to agent space F6, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-7", "mods": ["cmd", "ctrl", "alt"], "base": "7", "does": "Send the window to agent space F7, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-8", "mods": ["cmd", "ctrl", "alt"], "base": "8", "does": "Send the window to agent space F8, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-9", "mods": ["cmd", "ctrl", "alt"], "base": "9", "does": "Send the window to agent space F9, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-0", "mods": ["cmd", "ctrl", "alt"], "base": "0", "does": "Send the window to agent space F10, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-minus", "mods": ["cmd", "ctrl", "alt"], "base": "minus", "does": "Send the window to agent space F11, stay here", "short": "to agent", "note": ""}, {"key": "cmd-ctrl-alt-equal", "mods": ["cmd", "ctrl", "alt"], "base": "equal", "does": "Send the window to agent space F12, stay here", "short": "to agent", "note": ""}]}, {"name": "Workspace cycling", "bindings": [{"key": "cmd-tab", "mods": ["cmd"], "base": "tab", "does": "Next workspace", "short": "next", "note": ""}, {"key": "cmd-shift-tab", "mods": ["cmd", "shift"], "base": "tab", "does": "Previous workspace", "short": "prev", "note": ""}, {"key": "cmd-ctrl-tab", "mods": ["cmd", "ctrl"], "base": "tab", "does": "Back to the last workspace", "short": "last", "note": ""}]}, {"name": "Window cycling", "bindings": [{"key": "alt-tab", "mods": ["alt"], "base": "tab", "does": "Next window", "short": "next", "note": ""}, {"key": "alt-shift-tab", "mods": ["alt", "shift"], "base": "tab", "does": "Previous window", "short": "prev", "note": ""}]}, {"name": "Screen focus", "bindings": [{"key": "ctrl-alt-tab", "mods": ["ctrl", "alt"], "base": "tab", "does": "Next screen", "short": "screen", "note": ""}, {"key": "ctrl-alt-shift-tab", "mods": ["ctrl", "alt", "shift"], "base": "tab", "does": "Previous screen", "short": "screen", "note": ""}]}, {"name": "Everything else", "bindings": [{"key": "cmd-alt-c", "mods": ["cmd", "alt"], "base": "c", "does": "Apply your own bindings and reload AeroSpace", "short": "reload", "note": ""}, {"key": "cmd-shift-slash", "mods": ["cmd", "shift"], "base": "slash", "does": "Open this reference", "short": "keys", "note": ""}]}];
+
+// One colour per group, from the bar's own palette, in the order they appear.
+// Red is left out: on this bar red means something is wrong.
+const PALETTE = ["#64d2ff", "#bf5af2", "#ff6ac1", "#ff9f0a", "#32d74b", "#ffd60a",
+                 "#5e5ce6", "#66d4cf", "#ff8a65", "#ac8e68", "#a1a1a6", "#d97757"];
+GROUPS.forEach((g, i) => { g.color = PALETTE[i % PALETTE.length]; });
+
+const GLYPH = { cmd: "⌘", ctrl: "⌃", alt: "⌥", shift: "⇧" };
+const ORDER = ["ctrl", "alt", "shift", "cmd"];
+const KEYLABEL = { left: "←", right: "→", up: "↑", down: "↓", tab: "⇥", backspace: "⌫",
+                   enter: "↩", minus: "−", equal: "=", slash: "/", space: "Space" };
+
+// A Mac keyboard, row by row: [binding key, label, width in letter keys].
+const LAYOUT = [
+  [["grave", "`"], ...[1,2,3,4,5,6,7,8,9,0].map(n => [String(n), String(n)]), ["minus", "−"], ["equal", "="], ["backspace", "⌫", 1.5]],
+  [["tab", "⇥", 1.5], ..."qwertyuiop".split("").map(c => [c, c.toUpperCase()]), ["leftSquareBracket", "["], ["rightSquareBracket", "]"], ["backslash", "\\"]],
+  [["caps", "⇪", 1.75], ..."asdfghjkl".split("").map(c => [c, c.toUpperCase()]), ["semicolon", ";"], ["quote", "'"], ["enter", "↩", 1.75]],
+  [["shift", "⇧", 2.25, "mod"], ..."zxcvbnm".split("").map(c => [c, c.toUpperCase()]), ["comma", ","], ["period", "."], ["slash", "/"], ["shift", "⇧", 2.25, "mod"]],
+  [["fn", "fn"], ["ctrl", "⌃", 1, "mod"], ["alt", "⌥", 1, "mod"], ["cmd", "⌘", 1.25, "mod"], ["space", "", 4], ["cmd", "⌘", 1.25, "mod"], ["alt", "⌥", 1, "mod"],
+   ["left", "←"], ["up", "↑"], ["down", "↓"], ["right", "→"]],
+];
+
+const selected = new Set(["cmd"]);
+const board = document.getElementById("board");
+const readout = document.getElementById("readout");
+const legend = document.getElementById("legend");
+const keys = [];
+
+LAYOUT.forEach(row => {
+  const r = document.createElement("div");
+  r.className = "row";
+  row.forEach(([id, label, w = 1, kind]) => {
+    const k = document.createElement("div");
+    k.className = "key" + (kind === "mod" ? " mod-key" : "");
+    k.style.setProperty("--w", w);
+    k.dataset.id = id;
+    k.innerHTML = `<span>${label}</span><small></small>`;
+    r.appendChild(k);
+    keys.push(k);
+  });
+  board.appendChild(r);
+});
+
+const sameMods = (a, b) => a.length === b.size && a.every(m => b.has(m));
+const combo = mods => ORDER.filter(m => mods.includes(m)).map(m => GLYPH[m]).join("");
+
+function bindingFor(id) {
+  for (const g of GROUPS) for (const b of g.bindings)
+    if (b.base === id && sameMods(b.mods, selected)) return [b, g];
+  return null;
+}
+
+function light() {
+  const boardLeft = board.getBoundingClientRect().left;
+  let count = 0;
+  const lit = new Set();
+  keys.forEach(k => {
+    const id = k.dataset.id;
+    const isMod = k.classList.contains("mod-key");
+    k.classList.toggle("held", isMod && selected.has(id));
+    const found = isMod ? null : bindingFor(id);
+    // The ripple: each key waits by its distance from the left edge.
+    const x = k.getBoundingClientRect().left - boardLeft;
+    k.style.setProperty("--delay", `${Math.round(x / 9)}ms`);
+    k.classList.toggle("lit", !!found);
+    k.querySelector("small").textContent = found ? found[0].short : "";
+    k.style.setProperty("--c", found ? found[1].color : "transparent");
+    k.title = found ? `${combo(found[0].mods)} ${KEYLABEL[id] || id.toUpperCase()}: ${found[0].does}` : "";
+    if (found) { count++; lit.add(found[1]); }
+  });
+  const held = combo([...selected]);
+  readout.innerHTML = selected.size === 0
+    ? "Pick a modifier, or hold one down."
+    : count === 0
+      ? `<span class="combo">${held}</span> unlocks nothing on its own.`
+      : `<span class="combo">${held}</span> unlocks <strong>${count}</strong> key${count === 1 ? "" : "s"}. Point at one to read it.`;
+  legend.innerHTML = (selected.size ? `<b>${held}</b>` : "") + GROUPS.filter(g => lit.has(g))
+    .map(g => `<span style="--c:${g.color}"><i></i>${g.name}</span>`).join("");
+  document.querySelectorAll(".mod").forEach(b => b.setAttribute("aria-pressed", selected.has(b.dataset.mod)));
+}
+
+// For make_keys.py: the still in the docs.
+function poster() { document.body.classList.add("poster"); light(); }
+
+board.addEventListener("mouseover", e => {
+  const k = e.target.closest(".key.lit");
+  if (!k) return;
+  const found = bindingFor(k.dataset.id);
+  if (!found) return;
+  const [b, g] = found;
+  readout.innerHTML = `<span class="combo">${combo(b.mods)} ${KEYLABEL[b.base] || b.base.toUpperCase()}</span>
+    <strong>${b.does}</strong><span>${g.name}${b.note ? " · " + b.note : ""}</span>`;
+});
+board.addEventListener("mouseleave", light);
+
+document.querySelectorAll(".mod").forEach(button => button.addEventListener("click", () => {
+  const m = button.dataset.mod;
+  selected.has(m) ? selected.delete(m) : selected.add(m);
+  light();
+}));
+
+// Holding the real modifiers drives the keyboard too.
+function fromEvent(e) {
+  const held = new Set();
+  if (e.metaKey) held.add("cmd");
+  if (e.ctrlKey) held.add("ctrl");
+  if (e.altKey) held.add("alt");
+  if (e.shiftKey) held.add("shift");
+  return held;
+}
+let restore = null;
+addEventListener("keydown", e => {
+  if (!["Meta", "Control", "Alt", "Shift"].includes(e.key) || document.activeElement === search) return;
+  if (!restore) restore = new Set(selected);
+  selected.clear();
+  fromEvent(e).forEach(m => selected.add(m));
+  light();
+});
+addEventListener("keyup", e => {
+  if (!restore) return;
+  const held = fromEvent(e);
+  if (held.size) { selected.clear(); held.forEach(m => selected.add(m)); light(); return; }
+  selected.clear(); restore.forEach(m => selected.add(m)); restore = null; light();
+});
+
+// Every binding by group, the four arrows and the ten digits of one modifier folded.
+const groupsEl = document.getElementById("groups");
+function rowsOf(g) {
+  const out = [], seen = new Set();
+  for (const b of g.bindings) {
+    if (seen.has(b.key)) continue;
+    const arrows = ["left", "right", "up", "down"];
+    let family = null, label = null, does = b.does;
+    if (arrows.includes(b.base)) {
+      family = g.bindings.filter(x => arrows.includes(x.base) && sameMods(x.mods, new Set(b.mods)));
+      label = "←↑↓→"; does = b.does.replace(/\b(left|right|up|down)\b/, "in that direction");
+    } else if (/^\d$/.test(b.base)) {
+      family = g.bindings.filter(x => /^\d$/.test(x.base) && sameMods(x.mods, new Set(b.mods)));
+      label = "1…0"; does = b.does.replace(/\b\d+\b/, "1 to 10");
+    }
+    if (family && family.length > 1) { family.forEach(x => seen.add(x.key)); out.push({ mods: b.mods, label, does, note: b.note, members: family }); continue; }
+    seen.add(b.key);
+    out.push({ mods: b.mods, label: KEYLABEL[b.base] || b.base.toUpperCase(), does: b.does, note: b.note, members: [b] });
+  }
+  return out;
+}
+GROUPS.forEach(g => {
+  const el = document.createElement("div");
+  el.className = "group";
+  el.style.setProperty("--c", g.color);
+  el.innerHTML = `<h2><i></i>${g.name}</h2>`;
+  rowsOf(g).forEach(r => {
+    const row = document.createElement("div");
+    row.className = "binding";
+    const caps = ORDER.filter(m => r.mods.includes(m)).map(m => `<span>${GLYPH[m]}</span>`).join("") + `<span>${r.label}</span>`;
+    row.innerHTML = `<div class="keys">${caps}</div><div class="does">${r.does}${r.note ? `<em>${r.note}</em>` : ""}</div>`;
+    row.dataset.text = `${g.name} ${r.does} ${r.note} ${combo(r.mods)} ${r.label}`.toLowerCase();
+    row.addEventListener("mouseenter", () => { selected.clear(); r.mods.forEach(m => selected.add(m)); light(); });
+    el.appendChild(row);
+  });
+  groupsEl.appendChild(el);
+});
+
+const search = document.querySelector(".search");
+search.addEventListener("input", () => {
+  const q = search.value.trim().toLowerCase();
+  let any = false;
+  document.querySelectorAll(".group").forEach(g => {
+    let shown = 0;
+    g.querySelectorAll(".binding").forEach(r => {
+      const hit = !q || r.dataset.text.includes(q);
+      r.classList.toggle("dim", !hit);
+      if (hit) shown++;
+    });
+    g.classList.toggle("empty", q && shown === 0);
+    if (shown) any = true;
+  });
+  document.getElementById("none").style.display = any ? "none" : "block";
+});
+
+light();
+</script>
+</body>
+</html>

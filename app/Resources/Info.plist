@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key>
+  <string>Kuro</string>
+  <key>CFBundleDisplayName</key>
+  <string>Kuro</string>
+  <key>CFBundleIdentifier</key>
+  <string>dev.mostlygino.kuro</string>
+  <key>CFBundleExecutable</key>
+  <string>Kuro</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
+  <key>CFBundleShortVersionString</key>
+  <string>__VERSION__</string>
+  <key>CFBundleVersion</key>
+  <string>__VERSION__</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>26.0</string>
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.utilities</string>
+  <key>NSAppleEventsUsageDescription</key>
+  <string>Kuro asks System Events to hide or show the macOS menu bar when the bar is switched on or off.</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>Code AGPL-3.0-or-later. The Kuro name and icon © 2026 Gino de Graaff.</string>
+</dict>
+</plist>

@@ -1,0 +1,32 @@
+# Per-machine settings for this bar. Copy to local.sh (which git ignores) and
+# edit; colors.sh sources it last, so anything set there can be overridden here.
+
+# The Kuro app writes the everyday settings to ~/.config/kuro/settings (which
+# badges, what the clock opens, the menu bar opening). This file is for the
+# rest, and it wins over the app: anything set here is used.
+
+# What clicking the clock card's calendar row opens. Calendar.app by default.
+# export CLOCK_CLICK="/usr/bin/open 'https://calendar.example.com'"
+
+# What clicking the app name beside the workspaces does. Nothing by default;
+# plugins/hyper_m.sh presses control-option-command-shift-M, for a launcher.
+# export FRONT_APP_CLICK="$HOME/.config/sketchybar/plugins/hyper_m.sh"
+
+# A code-signing certificate for the Now Playing watcher, so macOS keeps its
+# System Audio Recording permission across rebuilds. Create one in Keychain
+# Access > Certificate Assistant > Create a Certificate (type: Code Signing),
+# then put its name here. Leave unset to sign ad-hoc.
+# export MEDIAWATCH_SIGN_ID="SketchyBar Local"
+
+# The real macOS menu bar never comes down over this bar (assets/topguard),
+# except through an opening this wide, in points, at the top centre of each
+# screen. 0 for none. The Kuro app sets it too.
+# export MENUBAR_REVEAL_WIDTH=300
+
+# An SSH tunnel kept up by a LaunchAgent (KeepAlive), shown as a row in the
+# Tailscale card with a hard Connect / Disconnect: off is launchctl disable +
+# bootout, so it stays off across logins until switched on again. The port is
+# the local end of the forward; it is what decides "connected".
+# export TUNNEL_AGENT=com.example.my-tunnel
+# export TUNNEL_NAME="My server"
+# export TUNNEL_PORT=11434

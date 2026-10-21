@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keeps AeroSpace running. AeroSpace 0.21.3-Beta can crash when the monitor
+  arrangement changes (upstream issue #506: Monitor.activeWorkspace recurses
+  until the stack runs out), and on its own login item it then simply stays
+  gone, leaving no tiling and no hotkeys. Under launchd a crash is restarted
+  within seconds, while quitting it from its menu (a clean exit) still means
+  quit. aerospace.toml sets start-at-login = false so there is only one owner.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>sh.kuro.aerospace</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Applications/AeroSpace.app/Contents/MacOS/AeroSpace</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>5</integer>
+  <key>ProcessType</key>
+  <string>Interactive</string>
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+</dict>
+</plist>

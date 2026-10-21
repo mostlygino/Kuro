@@ -1,0 +1,31 @@
+name: Release
+
+# A tag like v0.1.0 builds the Kuro app on GitHub's macOS runner and attaches
+# it to a release. Unsigned (no Developer ID): the first open is right-click,
+# Open. The app then finds or fetches the repository itself.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  app:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Build
+        run: scripts/build-app.sh --zip
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/Kuro.zip \
+            --title "Kuro $GITHUB_REF_NAME" --generate-notes \
+            --notes "Kuro.app for macOS 26. Unsigned: the first time, right-click it and choose Open. It sets up the desktop from nothing, or manages the one you have."

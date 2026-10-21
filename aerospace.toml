@@ -1,0 +1,342 @@
+config-version = 2
+# Off on purpose: launchd starts AeroSpace instead (launchd/sh.kuro.aerospace.plist,
+# installed by install.sh), because under launchd a crash is restarted and on
+# its own login item it is not. See that file for the crash.
+start-at-login = false
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+accordion-padding = 30
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+automatically-unhide-macos-hidden-apps = true
+on-focused-monitor-changed = [
+  'move-mouse monitor-lazy-center',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_focus_change'
+]
+
+on-focus-changed = [
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_focus_change'
+]
+
+key-mapping.preset = 'qwerty'
+
+# Borders only. SketchyBar starts itself from its own LaunchAgent,
+# sh.brew.sketchybar, with RunAtLoad and KeepAlive both set, so starting it here
+# as well meant two of them racing for the same mach port at every login. It also
+# quietly undid `sboff`, which disables that agent precisely so the bar stays
+# down.
+after-startup-command = [
+  'exec-and-forget ~/.config/borders/bordersrc'
+]
+
+# The new workspace rides along with the event, so the bar can start the chip
+# animation before it has asked AeroSpace anything; see aerospace_sync.sh.
+exec-on-workspace-change = [
+  '/bin/bash', '-c',
+  '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE="$AEROSPACE_FOCUSED_WORKSPACE"'
+]
+
+# All four gaps read as 40pt everywhere. Left, right and bottom measure from the
+# screen edge; the top measures from the bottom of the SketchyBar pills, which
+# sit at y 8..38 on every display now that nothing drops below the notch.
+#
+# outer.top itself is measured from the usable area, whose origin differs per
+# display: y=38 on the built-in (the notch strip, reserved even with the menu
+# bar auto-hidden) and y=0 on externals. So the same 40pt gap is written as 40
+# on the built-in, whose usable area already starts at the pills' bottom edge,
+# and as 78 on an external, where it starts at the screen top.
+#
+# 40 on the built-in holds at the 1800x1169 scaled mode, where the notch inset
+# is 38 and matches the pills exactly. At the 1512x982 default the inset is a
+# little smaller, so the same 40 lands a few points closer to the pills; not
+# enough to be worth a per-scaling value AeroSpace cannot express anyway.
+#
+# The built-in was 70 until 2026-09-25, for as long as the Now Playing pill sat
+# in the centre and was dropped below the notch to `inset .. inset + 30`: the
+# gap then had to clear the dropped pill rather than the bar. The pill moved to
+# the left beside the workspaces, the drop went with it, and so did the extra
+# 30pt. Before that it was 40 while the pill sat at the top, and 72 for one day
+# on 2026-09-08 when the whole bar was dropped instead of just the pill.
+#
+# 2026-10-14: both values +6 (40/78 to 46/84) because PILL_Y went from 14 to 8
+# and the pills moved 6pt down with it.
+
+[gaps]
+inner.horizontal = 16
+inner.vertical   = 16
+outer.left       = 40
+outer.bottom     = 40
+outer.top        = [{ monitor.'built-in' = 46 }, 84]
+outer.right      = 40
+
+# ==========================================================================
+# Ported from Omarchy's default Hyprland bindings
+# (github.com/basecamp/omarchy default/hypr/bindings/*.lua, quattro branch)
+#
+# Modifier mapping: Hyprland SUPER -> cmd (same physical Super/Cmd key).
+#
+# Known conflicts with macOS/app-native cmd shortcuts (kept as-is per request,
+# since the whole point was matching Omarchy's actual chords -- edit the
+# modifier on the affected line below if one of these becomes annoying):
+#   cmd-w      close          vs "close tab", used almost everywhere
+#   cmd-space  app launcher   vs Spotlight
+#   cmd-t      float toggle   vs "new tab", used almost everywhere
+#   cmd-f      fullscreen     vs "find", used almost everywhere
+#   cmd-o      pop out/float  vs "open..." dialog
+# cmd-comma was deliberately left unbound -- it's "Preferences" in every app.
+#
+# Not ported (no macOS equivalent, or macOS already covers it natively):
+#   - Clipboard (SUPER+C/V/X): macOS already does system-wide copy/paste/cut.
+#   - Media/brightness keys: real Mac keyboards already send these natively.
+#   - Screenshot via PRINT: no Print key on Mac keyboards -- use the native
+#     cmd-shift-3/4/5, which already covers this.
+#   - Notification dismiss/silence bindings, monitor DPI scaling, window
+#     transparency/gap toggling, tabbed-group internal cycling: no AeroSpace
+#     equivalent exists.
+#   - "Pseudo window", save/restore window width: no AeroSpace equivalent.
+# ==========================================================================
+
+[mode.main.binding]
+
+# --- Focus (tiling.lua) ---
+cmd-left  = 'focus left'
+cmd-down  = 'focus down'
+cmd-up    = 'focus up'
+cmd-right = 'focus right'
+
+# --- Swap ---
+cmd-shift-left  = 'swap left'
+cmd-shift-down  = 'swap down'
+cmd-shift-up    = 'swap up'
+cmd-shift-right = 'swap right'
+
+# --- Move the workspace to another screen ---
+cmd-shift-alt-left = [
+  'move-workspace-to-monitor left',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-down = [
+  'move-workspace-to-monitor down',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-up = [
+  'move-workspace-to-monitor up',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-right = [
+  'move-workspace-to-monitor right',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+
+# --- Stack (closest match to Hyprland groups) ---
+cmd-alt-left  = 'join-with left'
+cmd-alt-down  = 'join-with down'
+cmd-alt-up    = 'join-with up'
+cmd-alt-right = 'join-with right'
+
+# --- Window ---
+# cmd-w is not bound: AeroSpace took it for Omarchy's close-window, so no app
+# ever saw it and ⌘W in a browser tried to close the whole window instead of the
+# tab, or did nothing at all (2026-10-02). Every Mac app already closes its tab,
+# or its window when it has none, on ⌘W.
+ctrl-alt-backspace = 'close-all-windows-but-current --quit-if-last-window'
+cmd-t              = 'layout floating tiling'          # toggle float/tiling
+cmd-alt-f          = 'fullscreen'
+cmd-j              = 'layout tiles horizontal vertical' # closest match to "toggle split"
+
+# --- Resize (closest match to Hyprland's directional pixel resize) ---
+cmd-minus       = 'resize smart -50'
+cmd-equal       = 'resize smart +50'
+cmd-shift-minus = 'resize smart -200'
+cmd-shift-equal = 'resize smart +200'
+
+# --- Workspaces ---
+# Workspace numbers belong to screens: one screen has 1-10, two share 1-5 (main)
+# and 6-10, three 1-4, 5-7 and 8-10, and so on. The bar's aerospace_sync.sh
+# keeps them there whenever the screens change; see place_workspaces.
+cmd-1 = 'workspace 1'
+cmd-2 = 'workspace 2'
+cmd-3 = 'workspace 3'
+cmd-4 = 'workspace 4'
+cmd-5 = 'workspace 5'
+cmd-6 = 'workspace 6'
+cmd-7 = 'workspace 7'
+cmd-8 = 'workspace 8'
+cmd-9 = 'workspace 9'
+cmd-0 = 'workspace 10'
+
+cmd-shift-1 = 'move-node-to-workspace --focus-follows-window 1'
+cmd-shift-2 = 'move-node-to-workspace --focus-follows-window 2'
+cmd-shift-3 = 'move-node-to-workspace --focus-follows-window 3'
+cmd-shift-4 = 'move-node-to-workspace --focus-follows-window 4'
+cmd-shift-5 = 'move-node-to-workspace --focus-follows-window 5'
+cmd-shift-6 = 'move-node-to-workspace --focus-follows-window 6'
+cmd-shift-7 = 'move-node-to-workspace --focus-follows-window 7'
+cmd-shift-8 = 'move-node-to-workspace --focus-follows-window 8'
+cmd-shift-9 = 'move-node-to-workspace --focus-follows-window 9'
+cmd-shift-0 = 'move-node-to-workspace --focus-follows-window 10'
+
+cmd-shift-alt-1 = [
+  'move-node-to-workspace 1',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-2 = [
+  'move-node-to-workspace 2',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-3 = [
+  'move-node-to-workspace 3',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-4 = [
+  'move-node-to-workspace 4',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-5 = [
+  'move-node-to-workspace 5',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-6 = [
+  'move-node-to-workspace 6',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-7 = [
+  'move-node-to-workspace 7',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-8 = [
+  'move-node-to-workspace 8',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-9 = [
+  'move-node-to-workspace 9',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+cmd-shift-alt-0 = [
+  'move-node-to-workspace 10',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+
+# --- Scratch workspace (approximated with a dedicated workspace -- AeroSpace has
+#     no true scratchpad; cmd-ctrl-tab below gets you back)
+#     Moved off cmd-s/cmd-alt-s: cmd-s is "Save" everywhere on macOS, too
+#     important to steal. ---
+ctrl-alt-s       = 'workspace S'
+ctrl-alt-shift-s = [
+  'move-node-to-workspace S',
+  'exec-and-forget /opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change'
+]
+
+# --- Agent spaces ---
+#     F1 to F12, hidden workspaces for what agents open. A browser an agent
+#     drives (Playwright, headed test runs, the simulator) lands on one of these
+#     instead of on the workspace you are working in; see [[on-window-detected]]
+#     at the end and plugins/agent_space.sh. Off screen until you look; the bar
+#     shows them as one blue chip.
+#     ctrl-cmd 1..0, - and = look at F1 to F12, the layer above the workspaces'
+#     own cmd 1..0, so no fn key is needed. They were cmd-F1..F12 until
+#     2026-10-19, which on a keyboard whose top row is media keys took fn as
+#     well, three keys held for one jump. ctrl-alt-cmd sends the window there
+#     and stays (ctrl-shift-cmd 3 and 4 are the clipboard screenshots).
+cmd-ctrl-1 = 'workspace F1'
+cmd-ctrl-2 = 'workspace F2'
+cmd-ctrl-3 = 'workspace F3'
+cmd-ctrl-4 = 'workspace F4'
+cmd-ctrl-5 = 'workspace F5'
+cmd-ctrl-6 = 'workspace F6'
+cmd-ctrl-7 = 'workspace F7'
+cmd-ctrl-8 = 'workspace F8'
+cmd-ctrl-9 = 'workspace F9'
+cmd-ctrl-0 = 'workspace F10'
+cmd-ctrl-minus = 'workspace F11'
+cmd-ctrl-equal = 'workspace F12'
+cmd-ctrl-alt-1 = 'move-node-to-workspace F1'
+cmd-ctrl-alt-2 = 'move-node-to-workspace F2'
+cmd-ctrl-alt-3 = 'move-node-to-workspace F3'
+cmd-ctrl-alt-4 = 'move-node-to-workspace F4'
+cmd-ctrl-alt-5 = 'move-node-to-workspace F5'
+cmd-ctrl-alt-6 = 'move-node-to-workspace F6'
+cmd-ctrl-alt-7 = 'move-node-to-workspace F7'
+cmd-ctrl-alt-8 = 'move-node-to-workspace F8'
+cmd-ctrl-alt-9 = 'move-node-to-workspace F9'
+cmd-ctrl-alt-0 = 'move-node-to-workspace F10'
+cmd-ctrl-alt-minus = 'move-node-to-workspace F11'
+cmd-ctrl-alt-equal = 'move-node-to-workspace F12'
+
+# --- Workspace cycling ---
+cmd-tab       = 'workspace next'
+cmd-shift-tab = 'workspace prev'
+cmd-ctrl-tab  = 'workspace-back-and-forth'
+
+# --- Window cycling (Hyprland's ALT+TAB, within the workspace) ---
+alt-tab       = 'focus dfs-next'
+alt-shift-tab = 'focus dfs-prev'
+
+# --- Screen focus ---
+ctrl-alt-tab       = 'focus-monitor next'
+ctrl-alt-shift-tab = 'focus-monitor prev'
+
+# --- Everything else (utilities.lua) ---
+# cmd-space dropped: Raycast already has its own built-in global hotkey for this,
+# binding it here too meant Spotlight + Raycast + AeroSpace were all fighting over it.
+# Applies your own additions (~/.config/kuro/aerospace.local.toml) and reloads;
+# a config with an error is rolled back and the error shown. scripts/kuro-apply.sh.
+cmd-alt-c   = 'exec-and-forget ~/.config/sketchybar/../scripts/kuro-apply.sh --notify'
+# The keybinding reference, docs/keys.html, generated from this file by
+# docs/make_keys.py. Reached through the bar's config symlink, which points into
+# the repository, so it opens wherever Kuro is cloned.
+cmd-shift-slash = 'exec-and-forget open ~/.config/sketchybar/../docs/keys.html'
+
+# kuro:local-bindings
+#     Your own bindings from ~/.config/kuro/aerospace.local.toml land here, in
+#     the generated ~/.aerospace.toml. Leave this line where it is.
+
+# cmd-shift-space Omarchy: toggle sketchybar visibility
+
+
+# Agent spaces. Windows of the apps agents drive go straight to F1, off screen,
+# so nothing appears where you work; agent_space.sh then gives each browser
+# process a hidden workspace of its own (F1 to F12), so two agents testing at
+# once never share one. Apps you use yourself are not listed here.
+
+[[on-window-detected]]
+if.app-id = 'com.google.chrome.for.testing'
+run = ['move-node-to-workspace F1', 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh']
+
+[[on-window-detected]]
+if.app-id = 'org.chromium.Chromium'
+run = ['move-node-to-workspace F1', 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh']
+
+[[on-window-detected]]
+if.app-id = 'org.webkit.Playwright'
+run = ['move-node-to-workspace F1', 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh']
+
+[[on-window-detected]]
+if.app-id = 'org.mozilla.nightly'
+run = ['move-node-to-workspace F1', 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh']
+
+[[on-window-detected]]
+if.app-id = 'com.apple.iphonesimulator'
+run = ['move-node-to-workspace F1', 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh']
+
+[[on-window-detected]]
+if.app-id = 'com.github.Electron'
+run = ['move-node-to-workspace F1', 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh']
+
+# The Kuro app floats: a settings window, not a workspace's worth of work.
+# check-further-callbacks, because only the first matching rule runs otherwise,
+# and an agent opening the app still has its claim honoured below.
+[[on-window-detected]]
+if.app-id = 'dev.mostlygino.kuro'
+check-further-callbacks = true
+run = ['layout floating']
+
+# Everything else: an app an agent opened with `open` (plugins/agent_open.sh,
+# installed as ~/.local/bin/open) left a claim, and its window goes to an agent
+# space too; a window nobody claimed stays where it opened. Last, because only
+# the first rule that matches a window runs.
+[[on-window-detected]]
+if.during-aerospace-startup = false
+run = ['exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh claim']

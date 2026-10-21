@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The watcher is a bare Mach-O in every other respect, and it would have stayed
+  one, but a Core Audio process tap needs a TCC identity to ask for permission
+  with. Measured 2026-09-09 on macOS 26.6.2: launched as a bare adhoc-signed
+  binary from SketchyBar, AudioDeviceStart never returns at all. It parks in
+  HAL_HardwarePlugIn_DeviceStart waiting on a decision that cannot be presented,
+  because the responsible process has neither a bundle identifier nor a usage
+  description to prompt with.
+
+  So it lives in a bundle. LSBackgroundOnly keeps it out of the Dock and out of
+  the app switcher, so nothing about this is visible except the permission entry
+  it is here to create.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>mediawatch</string>
+	<!-- Stable, and it has to be: TCC keys the grant on this plus the signing
+	     identity. Change either and the permission is a different permission. -->
+	<key>CFBundleIdentifier</key>
+	<string>local.gino.sketchybar.mediawatch</string>
+	<key>CFBundleName</key>
+	<string>SketchyBar Now Playing</string>
+	<key>CFBundleDisplayName</key>
+	<string>SketchyBar Now Playing</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSBackgroundOnly</key>
+	<true/>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.2</string>
+	<!-- What the user is shown when the tap first starts. Worth being plain
+	     about the scope, because "system audio" sounds like all of it and this
+	     only ever taps the one process that is playing. -->
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>Reads the audio of whatever Spotify is playing, so the menu bar waveform moves with the actual sound instead of being a canned animation. Nothing is recorded or written to disk.</string>
+</dict>
+</plist>

@@ -1,0 +1,40 @@
+{
+  "name": "Kuro",
+  "eyebrow": "A quiet desktop",
+  "tagline": "A desktop that is mostly not there.",
+  "footer": "SKETCHYBAR · AEROSPACE · SWIFT",
+  "features": [
+    [
+      "Every state drawn",
+      "Badges with a shape for every state."
+    ],
+    [
+      "Windows in place",
+      "A tiling desktop built on AeroSpace."
+    ],
+    [
+      "Motion with intent",
+      "Transitions keep the desktop coherent."
+    ]
+  ],
+  "material": {
+    "kind": "stone",
+    "light": [
+      "#dfdde7",
+      "#f9f7fc",
+      "#2c2639",
+      "#62586e",
+      "#b4a9c1",
+      "#704580"
+    ],
+    "dark": [
+      "#09090c",
+      "#242028",
+      "#f4eef9",
+      "#bfb1ca",
+      "#58505e",
+      "#d2aee8"
+    ]
+  },
+  "icon": "icon.png"
+}

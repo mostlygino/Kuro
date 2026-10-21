@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-label="Kuro: a minimal, void-like macOS desktop">
+  <defs>
+    <radialGradient id="void" cx="72%" cy="38%" r="80%">
+      <stop offset="0" stop-color="#1b1b1f"/>
+      <stop offset="0.55" stop-color="#0b0b0d"/>
+      <stop offset="1" stop-color="#030304"/>
+    </radialGradient>
+    <radialGradient id="orb" cx="38%" cy="32%" r="75%">
+      <stop offset="0" stop-color="#e3b8fb"/>
+      <stop offset="0.55" stop-color="#bf5af2"/>
+      <stop offset="1" stop-color="#7b3a9d"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1280" height="400" fill="url(#void)"/>
+
+  <!-- 黒, large and nearly gone, the void the name is about -->
+  <text x="1210" y="330" text-anchor="end" font-size="340"
+        font-family="'Hiragino Mincho ProN','Yu Mincho','Noto Serif JP',serif"
+        fill="#1d1d21">黒</text>
+
+  <!-- the bar, in miniature: three pills floating in the dark -->
+  <g transform="translate(96 72)" font-family="-apple-system,'SF Pro Display','Helvetica Neue',Arial,sans-serif">
+    <rect x="0" y="0" width="112" height="30" rx="15" fill="#1c1c1e" fill-opacity="0.9" stroke="#ffffff" stroke-opacity="0.22"/>
+    <text x="22" y="20" font-size="13" font-weight="600" fill="#8e8e93">1</text>
+    <circle cx="56" cy="15" r="11" fill="#f5f5f7"/>
+    <text x="52" y="20" font-size="13" font-weight="700" fill="#1c1c1e">2</text>
+    <text x="84" y="20" font-size="13" font-weight="600" fill="#8e8e93">3</text>
+
+    <rect x="126" y="0" width="166" height="30" rx="15" fill="#1c1c1e" fill-opacity="0.9" stroke="#ffffff" stroke-opacity="0.22"/>
+    <!-- keep awake: the capsule, amber and cream -->
+    <g transform="translate(148 15) rotate(-45)">
+      <path d="M0,-3.3 H-4.4 A3.3,3.3 0 0 0 -4.4,3.3 H0 Z" fill="#ff9f0a"/>
+      <path d="M0,-3.3 H4.4 A3.3,3.3 0 0 1 4.4,3.3 H0 Z" fill="#f7f5f0"/>
+    </g>
+    <!-- Claude: the burst, half spent -->
+    <g stroke="#d97757" stroke-width="1.6" stroke-linecap="round" transform="translate(176 15)">
+      <line x1="0" y1="-3" x2="0" y2="-7.5"/><line x1="2.1" y1="-2.1" x2="5.3" y2="-5.3"/>
+      <line x1="3" y1="0" x2="7.5" y2="0"/><line x1="2.1" y1="2.1" x2="5.3" y2="5.3"/>
+      <line x1="0" y1="3" x2="0" y2="7.5" stroke-opacity="0.15" stroke="#ffffff"/>
+      <line x1="-2.1" y1="2.1" x2="-5.3" y2="5.3" stroke-opacity="0.15" stroke="#ffffff"/>
+      <line x1="-3" y1="0" x2="-7.5" y2="0" stroke-opacity="0.15" stroke="#ffffff"/>
+      <line x1="-2.1" y1="-2.1" x2="-5.3" y2="-5.3" stroke-opacity="0.15" stroke="#ffffff"/>
+    </g>
+    <!-- Tailscale: the shield, connected -->
+    <path transform="translate(198 7) scale(1)" d="M6,0.2 C4.4,0.2 3,0.9 2,1.4 L2,5.4 C2,8.6 4,10.6 6,11.8 C8,10.6 10,8.6 10,5.4 L10,1.4 C9,0.9 7.6,0.2 6,0.2 Z" fill="#32d74b"/>
+    <path transform="translate(198 7)" d="M4,6.1 L5.5,7.6 L8.3,4.5" fill="none" stroke="#1c1c1e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Wi-Fi: four dots, full signal -->
+    <g fill="#bf5af2"><circle cx="224" cy="15" r="2.3"/><circle cx="230" cy="15" r="2.3"/><circle cx="236" cy="15" r="2.3"/><circle cx="242" cy="15" r="2.3"/></g>
+    <!-- battery: the ring, charging -->
+    <circle cx="266" cy="15" r="7" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+    <circle cx="266" cy="15" r="7" fill="none" stroke="#32d74b" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="32 44" transform="rotate(-90 266 15)"/>
+    <path d="M267.2,10.8 L263.8,15.3 L266,15.3 L264.8,19.2 L268.2,14.7 L266,14.7 Z" fill="#32d74b"/>
+
+    <!-- the clock: the time alone; the date is in its card -->
+    <rect x="306" y="0" width="64" height="30" rx="15" fill="#1c1c1e" fill-opacity="0.9" stroke="#ffffff" stroke-opacity="0.22"/>
+    <text x="338" y="20" font-size="13" font-weight="700" fill="#f5f5f7" text-anchor="middle">11:42</text>
+  </g>
+
+  <g font-family="-apple-system,'SF Pro Display','Helvetica Neue',Arial,sans-serif">
+    <text x="92" y="250" font-size="104" font-weight="700" letter-spacing="22" fill="#f5f5f7">KURO</text>
+    <text x="96" y="300" font-size="22" font-weight="500" fill="#8e8e93" letter-spacing="1">A minimal, sleek, void-like macOS desktop.</text>
+    <text x="96" y="334" font-size="16" font-weight="500" fill="#5a5a5f" letter-spacing="3">AEROSPACE · SKETCHYBAR · JANKYBORDERS</text>
+  </g>
+</svg>
