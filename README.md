@@ -33,6 +33,7 @@
   <a href="#architecture">Architecture</a> ·
   <a href="#the-kuro-app">The app</a> ·
   <a href="#install">Install</a> ·
+  <a href="#on-omarchy">Omarchy</a> ·
   <a href="#keys">Keys</a>
 </p>
 
@@ -437,6 +438,20 @@ Vitals when those apps are installed. The
 [Claude Code](https://claude.com/claude-code) usage badge reads Claude Code's
 login from your keychain, so it is off until you switch it on. A badge that is
 off is never built at all: no item, no script, nothing polled.
+
+## On Omarchy
+
+<p align="center">
+  <img src="docs/omarchy-bar.png" alt="Kuro's bar on Omarchy: workspace chips and the app in focus on the left, the badge pill and the clock on the right" width="100%">
+</p>
+
+Kuro also runs on [Omarchy](https://omarchy.org) 4.5, as an Omarchy shell bar plugin: the same pills,
+chips, Now Playing, drawn badges and cards, redrawn in QML, and Kuro's gaps and focus ring in Hyprland. One
+script switches it on and off; see [`linux/omarchy`](linux/omarchy/README.md).
+
+```sh
+~/src/Kuro/linux/omarchy/install.sh          # --off for Omarchy's own bar
+```
 
 ## Keys
 

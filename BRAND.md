@@ -29,4 +29,6 @@ Kuro runs on, and does not include: [SketchyBar](https://github.com/FelixKratz/S
 [AeroSpace](https://github.com/nikitabobko/AeroSpace) by Nikita Bobko, and
 [media-control](https://github.com/ungive/media-control). The keybindings follow
 [Omarchy](https://omarchy.org)'s. The vitals ghost is drawn after [NeoHtop](https://github.com/Abdenasser/neohtop)'s
-icon. Service marks in the Now Playing pill (YouTube, Netflix and the rest) belong to their owners.
+icon. Service marks in the Now Playing pill (YouTube, Netflix and the rest) belong to their owners. The Omarchy bar's
+face is [Mulish](https://github.com/googlefonts/mulish) by the Mulish Project Authors, under the SIL Open Font
+License 1.1 (`linux/omarchy/kuro-bar/fonts/OFL.txt`).

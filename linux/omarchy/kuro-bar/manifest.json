@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "kuro.bar",
+  "name": "Kuro",
+  "version": "0.1.0",
+  "author": "mostlygino",
+  "description": "Kuro's bar: floating pills, workspace chips, Now Playing and drawn badges",
+  "kinds": ["bar"],
+  "entryPoints": {
+    "bar": "Bar.qml"
+  }
+}

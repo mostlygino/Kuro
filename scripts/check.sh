@@ -20,6 +20,10 @@ for f in sketchybar/sketchybarrc sketchybar/colors.sh sketchybar/plugins/*.sh $A
   zsh -n "$f" 2>/dev/null || fail "$f"
 done
 
+step "the Omarchy port: its installer parses, its manifest is JSON"
+bash -n linux/omarchy/install.sh 2>/dev/null || fail "linux/omarchy/install.sh"
+python3 -c "import json,sys; json.load(open(sys.argv[1]))" linux/omarchy/kuro-bar/manifest.json 2>/dev/null || fail "manifest.json"
+
 step "Python compiles, and since.py's self-test"
 for f in docs/*.py docs/brand/*.py sketchybar/plugins/*.py; do
   python3 -m py_compile "$f" 2>/dev/null || fail "$f"
