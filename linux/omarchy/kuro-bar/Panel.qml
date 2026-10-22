@@ -36,9 +36,10 @@ PanelWindow {
     y: K.pillY
     spacing: K.pillGap
 
+    // Just the chips. The app in focus sat beside them until 2026-10-22; on
+    // Omarchy it read as clutter, so it went.
     Pill {
       Workspaces { kuro: panel.kuro; monitor: panel.monitor }
-      AppLabel { kuro: panel.kuro; monitor: panel.monitor }
     }
     MediaPill { kuro: panel.kuro; visible: panel.primary && hasMedia }
   }

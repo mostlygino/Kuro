@@ -14,12 +14,11 @@ git clone https://github.com/mostlygino/Kuro.git ~/src/Kuro
 
 | Part | On the Mac | Here |
 |---|---|---|
-| Workspaces | AeroSpace, numbered per screen | Hyprland, Omarchy's block of ten per monitor, numbered 1 to 10 |
-| The app in focus | its icon and name, `void` on an empty screen | the same, from Hyprland and the desktop entries |
+| Workspaces | AeroSpace, numbered per screen, the app in focus beside them | Hyprland, Omarchy's block of ten per monitor, numbered 1 to 10; just the chips |
 | Now Playing | `mediawatch` on `media-control` | MPRIS: a spinning cover disc, title ~ artist, click plays or pauses |
 | Keep awake | the capsule, `caffeinate` | the capsule, Omarchy's idle service (`omarchy-shell idle`) |
 | Vitals | the ghost, from Vitals | the ghost, from `/proc`: the same heat scale and dead band |
-| Network | four dots, a port on a cable | the same, from NetworkManager |
+| Network | four dots, a port on a cable | four dots on Wi-Fi, from NetworkManager; nothing on a cable |
 | Tailscale, battery | shield and ring | the same, where Tailscale is installed and there is a battery |
 | Clock | 12-hour, a card with the month | the same card, ISO weeks down the side |
 

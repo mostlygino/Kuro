@@ -41,8 +41,8 @@ var cardRow = 26
 var cardFontSize = 13
 var cardPad = 12
 var cardRadius = 12
-// Nearly opaque: a card can open over a notification, and it must not read through.
-var card = "#f51c1c1e"
+// Opaque: a card opens over windows and notifications, and none may read through.
+var card = "#ff1c1c1e"
 
 // The heat scale the vitals ghost wears: idle, light, working, heavy, maxed out.
 var heat = ["#66d4cf", "#32d74b", "#ffd60a", "#ff9f0a", "#ff453a"]

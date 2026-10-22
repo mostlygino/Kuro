@@ -181,7 +181,9 @@ Pill {
   Badge {
     id: net
     name: root.primary ? "wifi" : ""
-    visible: root.kuro.hasBadge("wifi")
+    // Wi-Fi only: on a cable there is nothing worth a badge (the port mark
+    // read as noise), so the badge goes until the Mac is on Wi-Fi again.
+    visible: root.kuro.hasBadge("wifi") && root.netType !== "ethernet"
     kuro: root.kuro
     mark: DotsMark {
       cable: root.netType === "ethernet"

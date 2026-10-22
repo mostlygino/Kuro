@@ -442,7 +442,7 @@ off is never built at all: no item, no script, nothing polled.
 ## On Omarchy
 
 <p align="center">
-  <img src="docs/omarchy-bar.png" alt="Kuro's bar on Omarchy: workspace chips and the app in focus on the left, the badge pill and the clock on the right" width="100%">
+  <img src="docs/omarchy-bar.png" alt="Kuro's bar on Omarchy: workspace chips on the left, the badge pill and the clock on the right, with three of its cards" width="100%">
 </p>
 
 Kuro also runs on [Omarchy](https://omarchy.org) 4.5, as an Omarchy shell bar plugin: the same pills,
