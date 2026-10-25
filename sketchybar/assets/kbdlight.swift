@@ -2,6 +2,7 @@
 // MacBook's own keyboard do, for keyboards and setups that have no such key.
 //
 //   kbdlight up | down      one step of 1/16, the system's own step
+//   kbdlight off | max      all the way down or up
 //   kbdlight                prints the level, 0 to 1
 //
 // Through CoreBrightness's KeyboardBrightnessClient, which is what Control
@@ -42,9 +43,14 @@ let id = keyboard.uint64Value
 let now = get(client, getSelector, id)
 let direction = CommandLine.arguments.dropFirst().first
 guard let direction else { print(String(format: "%.3f", now)); exit(0) }
-guard direction == "up" || direction == "down" else { fail("up or down") }
-
 // Onto the next sixteenth, so a level set by the slider lands back on the grid.
 let steps = (now / step).rounded()
-let target = min(1, max(0, (direction == "up" ? steps + 1 : steps - 1) * step))
+let target: Float
+switch direction {
+case "up": target = min(1, (steps + 1) * step)
+case "down": target = max(0, (steps - 1) * step)
+case "off": target = 0
+case "max": target = 1
+default: fail("up, down, off or max")
+}
 guard set(client, setSelector, target, id) else { fail("the backlight refused the change") }

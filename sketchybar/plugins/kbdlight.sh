@@ -1,7 +1,7 @@
 #!/bin/zsh
 
-# `kbdlight.sh up|down`: one step of the MacBook keyboard's backlight
-# (assets/kbdlight). For a binding of your own in
+# `kbdlight.sh up|down|off|max`: the MacBook keyboard's backlight, a step at a
+# time or all the way (assets/kbdlight). For a binding of your own in
 # ~/.config/kuro/aerospace.local.toml, for example:
 #
 #   cmd-rightSquareBracket = 'exec-and-forget ~/.config/sketchybar/plugins/kbdlight.sh up'
