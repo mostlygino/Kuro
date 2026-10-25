@@ -15,19 +15,7 @@
 # cases that slip past it (seen 2026-10-03: badges dimmed and the workspace pill
 # gone after a day of screens coming and going).
 
-zmodload zsh/datetime
-ASSETS="${CONFIG_DIR:-$HOME/.config/sketchybar}/assets"
-STAMP="$HOME/.cache/sketchybar/health-reload"
-
-if [[ -x "$ASSETS/zorder" ]] && ! "$ASSETS/zorder"; then
-  last=0
-  [[ -r "$STAMP" ]] && last=$(<"$STAMP")
-  if (( EPOCHSECONDS - last >= 120 )); then
-    print -r -- "$EPOCHSECONDS" > "$STAMP"
-    echo "bar_health.sh: a pill was stacked over its items, reloading the bar" >&2
-    exec sketchybar --reload
-  fi
-fi
+"${0:A:h}/zorder_heal.sh" bar_health.sh
 
 # Which screens exist, and which screens the drawn workspace chips are on.
 /usr/bin/python3 - <<'PY' && exit 0

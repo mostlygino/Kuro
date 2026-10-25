@@ -24,14 +24,17 @@ import Foundation
 
 /// Windows front to back. True when every window that encloses a smaller one
 /// is behind it.
-func stackedRight(_ frontToBack: [CGRect]) -> Bool {
+func stackedRight(_ frontToBack: [CGRect]) -> Bool { misstacked(frontToBack) == nil }
+
+/// The first window found in front of one it encloses, and that one.
+func misstacked(_ frontToBack: [CGRect]) -> (front: CGRect, back: CGRect)? {
     for (i, front) in frontToBack.enumerated() {
         for back in frontToBack[(i + 1)...]
         where back.width < front.width && front.insetBy(dx: -1, dy: -1).contains(back) {
-            return false
+            return (front, back)
         }
     }
-    return true
+    return nil
 }
 
 if CommandLine.arguments.contains("--self-test") {
@@ -60,4 +63,9 @@ let rects = windows.compactMap { window -> CGRect? in
     else { return nil }
     return CGRect(x: x, y: y, width: w, height: h)
 }
-exit(stackedRight(rects) ? 0 : 1)
+// Which pair, on stderr, so the log says what was wrong and not only that it was.
+if let (front, back) = misstacked(rects) {
+    FileHandle.standardError.write("\(Int(front.width))pt window at x \(Int(front.minX)) over \(Int(back.width))pt at x \(Int(back.minX))".data(using: .utf8)!)
+    exit(1)
+}
+exit(0)

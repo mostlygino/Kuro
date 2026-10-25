@@ -40,13 +40,5 @@ done
 # dims them as if greyed out (found 2026-09-29, the badge pill over all five
 # badges); a reload is what puts the order back. assets/zorder says which it is.
 # After the watchers, so no card is open while it looks.
-ASSETS="${CONFIG_DIR:-$HOME/.config/sketchybar}/assets"
-PROBE="$ASSETS/zorder"
-if [[ ! -x "$PROBE" || "$ASSETS/zorder.swift" -nt "$PROBE" ]]; then
-  /usr/bin/xcrun swiftc -O "$ASSETS/zorder.swift" -o "$PROBE" 2>/dev/null
-fi
 sleep 0.5
-if [[ -x "$PROBE" ]] && ! "$PROBE"; then
-  echo "display_settle.sh: a pill was stacked over its items, reloading the bar" >&2
-  sketchybar --reload
-fi
+"${0:A:h}/zorder_heal.sh" display_settle.sh

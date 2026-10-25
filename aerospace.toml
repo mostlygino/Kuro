@@ -33,9 +33,11 @@ after-startup-command = [
 
 # The new workspace rides along with the event, so the bar can start the chip
 # animation before it has asked AeroSpace anything; see aerospace_sync.sh.
+# The one it left goes to a file, for agent_space.sh to come back to when a
+# test browser has pulled the screen over to an agent space.
 exec-on-workspace-change = [
   '/bin/bash', '-c',
-  '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE="$AEROSPACE_FOCUSED_WORKSPACE"'
+  '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE="$AEROSPACE_FOCUSED_WORKSPACE"; echo "$AEROSPACE_PREV_WORKSPACE" > "$HOME/.cache/kuro/workspace-left" 2>/dev/null'
 ]
 
 # All four gaps read as 40pt everywhere. Left, right and bottom measure from the
