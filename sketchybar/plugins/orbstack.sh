@@ -9,9 +9,9 @@
 #   orbstack.sh open         bring the OrbStack window up
 #   orbstack.sh quit         stop OrbStack and quit the app
 #
-# The badge is an orb drawn by assets/orbmark: purple while any container or
-# machine is running, grey while OrbStack is up with nothing running. With the app gone the
-# badge is hidden and the pill closes up around the other three.
+# The badge is an orb drawn by assets/orbmark, purple, and only there while a
+# container or machine is running: with nothing running, or with the app gone,
+# the badge is hidden and the pill closes up around the others.
 #
 # The card is what is running and a way to stop all of it: each running Linux
 # machine and Compose project, and Quit all. Stopped ones are left off; until
@@ -317,6 +317,13 @@ PY
 
 [[ -n "$state" ]] || exit 0
 read -r mood count <<< "$state"
+
+# Only while something runs. OrbStack up with every machine and container
+# stopped drew a grey orb until 2026-10-25, a badge for nothing.
+if [[ "$mood" != busy ]]; then
+  hide_badge
+  exit 0
+fi
 
 motion_show orbstack "$mood" render_mark "$CACHE_DIR"
 
