@@ -132,7 +132,7 @@ restarted by its plugin on every `--reload`.
 | `motionwatch` | `plugins/motion_watch.sh` | plays the badges' drawn transitions and runs property tweens for everything else, at 60 fps; idle otherwise |
 | `hoverwatch` | `plugins/hover_watch.sh` | opens cards on click, animates their arrival, closes them on a second click or 5 s after the pointer leaves |
 | `menubarwatch` | `plugins/menubar_watch.sh` | notices the macOS menu bar being revealed and clears the bar out of its way |
-| `zorder` | `plugins/display_settle.sh` | after a display change or wake, checks no pill's window is stacked over its items (which dims them as if greyed out) and reloads the bar if one is |
+| `zorder` | `plugins/zorder_heal.sh`, from `display_settle.sh` and `bar_health.sh` | after a display change or wake, and every 20 s, checks no pill's window is stacked over its items (which dims them as if greyed out); a fault still there a second later reloads the bar, at most once in two minutes, and the log names the two windows |
 | `topguard` | `plugins/menubar_watch.sh` | keeps the macOS menu bar from ever coming down: an event tap holds the pointer 6pt below each screen's top edge, where the menu bar's reveal strip is; `MENUBAR_REVEAL_WIDTH` in local.sh leaves an opening that wide at the top centre where it still comes down |
 | `kbdlight` | `plugins/kbdlight.sh` | steps the MacBook keyboard's backlight up or down (CoreBrightness), for a binding of your own: `kbdlight.sh up` / `down` |
 

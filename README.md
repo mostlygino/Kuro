@@ -353,7 +353,7 @@ flowchart LR
 | `wifiinfo` | 125 | Reads the Wi-Fi link through CoreWLAN, from a Location-authorised bundle |
 | `topguard` | 116 | Keeps the macOS menu bar from coming down: an event tap holds the pointer below each screen's top strip, with an optional opening at the top centre (`MENUBAR_REVEAL_WIDTH`) |
 | `Kuro.app` | 2038 | The setup and manager app (`app/`, SwiftUI): onboarding, badges with live previews, your keys, health, updates |
-| `zorder` | 63 | Checks no pill's window is stacked over its badges, for the bar's self-heal |
+| `zorder` | 71 | Checks no pill's window is stacked over its badges, for the bar's self-heal |
 | `vitalsinfo` | 41 | Reads CPU ticks and memory the way Activity Monitor counts them |
 | `ncstate` | 17 | Says whether Notification Center is on screen |
 

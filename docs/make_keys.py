@@ -49,7 +49,7 @@ DESCRIBE = [
     (r"^move-workspace-to-monitor (left|right|up|down)$", "Move the workspace to the screen {0}", "to screen"),
     (r"^workspace (\d+)$", "Go to workspace {0}", "go {0}"),
     (r"^workspace S$", "Go to the scratch workspace", "scratch"),
-    (r"^workspace F(\d+)$", "Look at agent space F{0}", "agent"),
+    (r"^exec-and-forget .*agent_space\.sh look F(\d+)$", "Look at agent space F{0}", "agent"),
     (r"^move-node-to-workspace F(\d+)$", "Send the window to agent space F{0}, stay here", "to agent"),
     (r"^move-node-to-workspace --focus-follows-window (\d+)$", "Move the window to workspace {0} and follow", "take {0}"),
     (r"^move-node-to-workspace (\d+)$", "Move the window to workspace {0}, stay here", "send {0}"),

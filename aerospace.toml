@@ -33,11 +33,11 @@ after-startup-command = [
 
 # The new workspace rides along with the event, so the bar can start the chip
 # animation before it has asked AeroSpace anything; see aerospace_sync.sh.
-# The one it left goes to a file, for agent_space.sh to come back to when a
-# test browser has pulled the screen over to an agent space.
+# A change to an agent space goes past agent_space.sh's guard too, which sends
+# the screen back unless you asked to go there.
 exec-on-workspace-change = [
   '/bin/bash', '-c',
-  '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE="$AEROSPACE_FOCUSED_WORKSPACE"; echo "$AEROSPACE_PREV_WORKSPACE" > "$HOME/.cache/kuro/workspace-left" 2>/dev/null'
+  '/opt/homebrew/bin/sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE="$AEROSPACE_FOCUSED_WORKSPACE"; case "$AEROSPACE_FOCUSED_WORKSPACE" in F*) exec ~/.config/sketchybar/plugins/agent_space.sh guard ;; esac'
 ]
 
 # All four gaps read as 40pt everywhere. Left, right and bottom measure from the
@@ -237,23 +237,24 @@ ctrl-alt-shift-s = [
 #     instead of on the workspace you are working in; see [[on-window-detected]]
 #     at the end and plugins/agent_space.sh. Off screen until you look; the bar
 #     shows them as one blue chip.
-#     ctrl-cmd 1..0, - and = look at F1 to F12, the layer above the workspaces'
+#     ctrl-cmd 1..0, - and = look at F1 to F12 (through agent_space.sh, so its
+#     guard knows you asked), the layer above the workspaces'
 #     own cmd 1..0, so no fn key is needed. They were cmd-F1..F12 until
 #     2026-10-19, which on a keyboard whose top row is media keys took fn as
 #     well, three keys held for one jump. ctrl-alt-cmd sends the window there
 #     and stays (ctrl-shift-cmd 3 and 4 are the clipboard screenshots).
-cmd-ctrl-1 = 'workspace F1'
-cmd-ctrl-2 = 'workspace F2'
-cmd-ctrl-3 = 'workspace F3'
-cmd-ctrl-4 = 'workspace F4'
-cmd-ctrl-5 = 'workspace F5'
-cmd-ctrl-6 = 'workspace F6'
-cmd-ctrl-7 = 'workspace F7'
-cmd-ctrl-8 = 'workspace F8'
-cmd-ctrl-9 = 'workspace F9'
-cmd-ctrl-0 = 'workspace F10'
-cmd-ctrl-minus = 'workspace F11'
-cmd-ctrl-equal = 'workspace F12'
+cmd-ctrl-1 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F1'
+cmd-ctrl-2 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F2'
+cmd-ctrl-3 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F3'
+cmd-ctrl-4 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F4'
+cmd-ctrl-5 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F5'
+cmd-ctrl-6 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F6'
+cmd-ctrl-7 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F7'
+cmd-ctrl-8 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F8'
+cmd-ctrl-9 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F9'
+cmd-ctrl-0 = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F10'
+cmd-ctrl-minus = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F11'
+cmd-ctrl-equal = 'exec-and-forget ~/.config/sketchybar/plugins/agent_space.sh look F12'
 cmd-ctrl-alt-1 = 'move-node-to-workspace F1'
 cmd-ctrl-alt-2 = 'move-node-to-workspace F2'
 cmd-ctrl-alt-3 = 'move-node-to-workspace F3'

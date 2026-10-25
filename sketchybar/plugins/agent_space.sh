@@ -11,8 +11,32 @@
 # `agent_space.sh claim` is the catch-all rule's, for every other new window:
 # it moves the window only if an agent opened its app moments ago through
 # plugins/agent_open.sh, which left a claim on it; anything else stays put.
+#
+# `agent_space.sh look F3` is the ctrl-cmd keys': go and look at an agent space.
+# `agent_space.sh guard` is aerospace.toml's exec-on-workspace-change, run when
+# the screen lands on an agent space: back where it was, unless you went there.
+# A test browser brings itself forward whatever `open -g` asked, launched or
+# opened again, and AeroSpace follows the focus to its window: on 2026-10-25
+# Chrome for Testing pulled the screen over to F1 and kept it there.
 
 AEROSPACE=/opt/homebrew/bin/aerospace
+zmodload zsh/datetime zsh/stat
+# Left by look and next, read by guard: you asked for an agent space.
+LOOK="${XDG_CACHE_HOME:-$HOME/.cache}/kuro/agent-look"
+asked() { mkdir -p "${LOOK:h}"; print -n > "$LOOK"; }
+
+if [[ "$1" == look && "$2" == F<1-12> ]]; then
+  asked
+  exec "$AEROSPACE" workspace "$2"
+fi
+
+if [[ "$1" == guard ]]; then
+  to="${AEROSPACE_FOCUSED_WORKSPACE:-}" from="${AEROSPACE_PREV_WORKSPACE:-}"
+  # Only from one of your workspaces; between agent spaces you are already looking.
+  [[ "$to" == F<1-12> && -n "$from" && "$from" != F<1-12> ]] || exit 0
+  [[ -e "$LOOK" ]] && (( EPOCHSECONDS - $(zstat +mtime "$LOOK") <= 2 )) && exit 0
+  exec "$AEROSPACE" workspace "$from"
+fi
 
 # `agent_space.sh next`, the agent chip's click: the next agent space with
 # windows after the one in view, round to the first.
@@ -24,10 +48,10 @@ if [[ "$1" == next ]]; then
   for (( i = 1; i < ${#busy}; i++ )); do
     [[ "${busy[$i]}" == "$here" ]] && { next="${busy[$(( i + 1 ))]}"; break; }
   done
+  asked
   exec "$AEROSPACE" workspace "$next"
 fi
 
-zmodload zsh/datetime
 window="$AEROSPACE_WINDOW_ID"
 [[ -n "$window" ]] || exit 0
 
@@ -39,17 +63,6 @@ if [[ "$1" == claim ]]; then
   # The common case, no agent opening anything: one directory read and out.
   claimed=("$CLAIMS"/*(N))
   (( ${#claimed} )) || exit 0
-fi
-
-# Where you were before the new window took you anywhere. AeroSpace has often
-# followed it to F1 by the time this runs, and then the workspace it left,
-# written by aerospace.toml's exec-on-workspace-change a moment ago, is home.
-zmodload zsh/stat
-home=$("$AEROSPACE" list-workspaces --focused 2>/dev/null)
-LEFT="${XDG_CACHE_HOME:-$HOME/.cache}/kuro/workspace-left"
-if [[ "$home" == F<1-12> && -r "$LEFT" ]] \
-    && (( EPOCHSECONDS - $(zstat +mtime "$LEFT" 2>/dev/null || print 0) <= 2 )); then
-  home=$(<"$LEFT")
 fi
 
 listing=$("$AEROSPACE" list-windows --all --format '%{window-id}|%{app-pid}|%{workspace}|%{app-bundle-id}' 2>/dev/null)
@@ -81,17 +94,5 @@ if [[ -z "$target" ]]; then
     [[ "$busy" == *" F$n "* ]] || { target="F$n"; break; }
   done
 fi
-[[ -n "$target" && "$target" != "$here" ]] && \
-  "$AEROSPACE" move-node-to-workspace --window-id "$window" "$target" 2>/dev/null
-
-# A browser launched for testing brings itself forward, `open -g` or not, and
-# AeroSpace follows the focus to its window: on 2026-10-25 Chrome for Testing
-# pulled the screen over to F1. Go back, now and for a few seconds after, as it
-# can come forward twice. Not when you were on an agent space already: then you
-# went there yourself.
-[[ -n "$home" && "$home" != F<1-12> ]] || exit 0
-for _ in {1..15}; do
-  [[ "$("$AEROSPACE" list-workspaces --focused 2>/dev/null)" == F<1-12> ]] \
-    && "$AEROSPACE" workspace "$home"
-  sleep 0.2
-done
+[[ -n "$target" && "$target" != "$here" ]] || exit 0
+"$AEROSPACE" move-node-to-workspace --window-id "$window" "$target" 2>/dev/null
