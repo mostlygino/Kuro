@@ -134,6 +134,7 @@ restarted by its plugin on every `--reload`.
 | `menubarwatch` | `plugins/menubar_watch.sh` | notices the macOS menu bar being revealed and clears the bar out of its way |
 | `zorder` | `plugins/zorder_heal.sh`, from `display_settle.sh` and `bar_health.sh` | after a display change or wake, and every 20 s, checks no pill's window is stacked over its items (which dims them as if greyed out); a fault still there a second later is logged with the two windows, at most once in ten minutes; it no longer reloads the bar |
 | `topguard` | `plugins/menubar_watch.sh` | keeps the macOS menu bar from ever coming down: an event tap holds the pointer 6pt below each screen's top edge, where the menu bar's reveal strip is; `MENUBAR_REVEAL_WIDTH` in local.sh leaves an opening that wide at the top centre where it still comes down |
+| `tiler` | `plugins/tiler.sh`, from AeroSpace's after-startup-command | keeps a layout per screen (`~/.config/kuro/layouts`): Columns, Rows or Side, more windows than the screen's panes stacked in the last one; leaves a workspace alone until its windows change, and never acts while the screens settle |
 | `kbdlight` | `plugins/kbdlight.sh` | steps the MacBook keyboard's backlight up or down (CoreBrightness), for a binding of your own: `kbdlight.sh up` / `down` |
 
 `mediawatch` and `wifiinfo` ship as signed `.app` bundles: the audio tap needs

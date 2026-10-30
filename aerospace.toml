@@ -27,8 +27,10 @@ key-mapping.preset = 'qwerty'
 # as well meant two of them racing for the same mach port at every login. It also
 # quietly undid `sboff`, which disables that agent precisely so the bar stays
 # down.
+# And Kuro's window layouts, which live and go with AeroSpace (plugins/tiler.sh).
 after-startup-command = [
-  'exec-and-forget ~/.config/borders/bordersrc'
+  'exec-and-forget ~/.config/borders/bordersrc',
+  'exec-and-forget ~/.config/sketchybar/plugins/tiler.sh'
 ]
 
 # The new workspace rides along with the event, so the bar can start the chip
@@ -147,6 +149,17 @@ ctrl-alt-backspace = 'close-all-windows-but-current --quit-if-last-window'
 cmd-t              = 'layout floating tiling'          # toggle float/tiling
 cmd-alt-f          = 'fullscreen'
 cmd-j              = 'layout tiles horizontal vertical' # closest match to "toggle split"
+
+# --- Layouts ---
+# A layout for the screen in focus, kept as windows open and close there:
+# columns, rows, or one window on the left with the rest stacked beside it.
+# Past five panes on an ultrawide, four on a landscape screen and three on a
+# portrait one, the rest stack in the last pane. Off is AeroSpace as it is. See
+# plugins/tiler.sh and assets/tiler.swift; the Kuro app sets them per screen.
+cmd-alt-1 = 'exec-and-forget ~/.config/sketchybar/plugins/tiler.sh set columns'
+cmd-alt-2 = 'exec-and-forget ~/.config/sketchybar/plugins/tiler.sh set rows'
+cmd-alt-3 = 'exec-and-forget ~/.config/sketchybar/plugins/tiler.sh set side'
+cmd-alt-0 = 'exec-and-forget ~/.config/sketchybar/plugins/tiler.sh set off'
 
 # --- Resize (closest match to Hyprland's directional pixel resize) ---
 cmd-minus       = 'resize smart -50'

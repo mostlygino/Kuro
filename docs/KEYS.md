@@ -1,6 +1,6 @@
 <h1 align="center">Keys</h1>
 
-<p align="center">All 89 AeroSpace bindings in Kuro, read straight out of <a href="../aerospace.toml"><code>aerospace.toml</code></a>, so this page cannot drift from the config.<br>The layout follows Omarchy, with <kbd>⌘</kbd> in the place of its Super key.</p>
+<p align="center">All 93 AeroSpace bindings in Kuro, read straight out of <a href="../aerospace.toml"><code>aerospace.toml</code></a>, so this page cannot drift from the config.<br>The layout follows Omarchy, with <kbd>⌘</kbd> in the place of its Super key.</p>
 
 <p align="center"><img src="keys.png" alt="The Kuro keyboard under Command: every bound key lit in its group's colour, with the word for what it does" width="100%"></p>
 
@@ -11,7 +11,7 @@
 
 <p align="center"><kbd>⌘</kbd> Command &nbsp; <kbd>⌥</kbd> Option &nbsp; <kbd>⌃</kbd> Control &nbsp; <kbd>⇧</kbd> Shift &nbsp; <kbd>⇥</kbd> Tab &nbsp; <kbd>⌫</kbd> Delete</p>
 
-<p align="center"><a href="#windows">Windows</a> · <a href="#workspaces">Workspaces</a> · <a href="#screens">Screens</a> · <a href="#everything-else">Everything else</a></p>
+<p align="center"><a href="#windows">Windows</a> · <a href="#workspaces">Workspaces</a> · <a href="#screens">Screens</a> · <a href="#everything-else">Everything else</a> · <a href="#layouts">Layouts</a></p>
 
 ## At a glance
 
@@ -85,6 +85,15 @@ Workspace numbers belong to screens: one screen has 1 to 10, two share 1 to 5 (m
 |---|---|
 | <kbd>⌥</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>C</kbd> | Apply your own bindings and reload AeroSpace |
 | <kbd>⇧</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>/</kbd> | Open this reference |
+
+## Layouts
+
+| Keys | Does |
+|---|---|
+| <kbd>⌥</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>1</kbd> | Layout: columns |
+| <kbd>⌥</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>2</kbd> | Layout: rows |
+| <kbd>⌥</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>3</kbd> | Layout: one window left, the rest stacked |
+| <kbd>⌥</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>0</kbd> | Layout off: AeroSpace as it is |
 
 ---
 

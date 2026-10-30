@@ -70,6 +70,9 @@ DESCRIBE = [
     (r"^resize smart \+(\d+)$", "Grow by {0} pt", "+{0}"),
     (r"^reload-config$", "Reload the AeroSpace config", "reload"),
     (r"^exec-and-forget .*kuro-apply\.sh.*$", "Apply your own bindings and reload AeroSpace", "reload"),
+    (r"^exec-and-forget .*tiler\.sh set off$", "Layout off: AeroSpace as it is", "off"),
+    (r"^exec-and-forget .*tiler\.sh set side$", "Layout: one window left, the rest stacked", "side"),
+    (r"^exec-and-forget .*tiler\.sh set (columns|rows)$", "Layout: {0}", "{0}"),
     (r"^exec-and-forget open .*keys\.html$", "Open this reference", "keys"),
     (r"^echo .*ignored$", "Blocked, so no app can use it", "blocked"),
 ]
@@ -146,6 +149,13 @@ SECTIONS = [
 ]
 
 
+def uniform_digits(bindings: list[dict], mods: list[str]) -> bool:
+    """True when the digits held with these modifiers all do one thing to a
+    different number (go to 1 to 10), not different things (the layouts)."""
+    does = {re.sub(r"\d+", "N", x["does"]) for x in bindings if x["mods"] == mods and x["base"].isdigit()}
+    return len(does) == 1
+
+
 def rows(group: dict) -> list[tuple[list[str], str, str]]:
     """A group's bindings as (mods, key, what) rows, with the four arrows and the
     ten digits of one modifier folded into one row each."""
@@ -157,7 +167,7 @@ def rows(group: dict) -> list[tuple[list[str], str, str]]:
         if b["base"] in ARROWS:
             family = [x for x in group["bindings"] if x["mods"] == b["mods"] and x["base"] in ARROWS]
             key, what = "←↑↓→", re.sub(r"\b(left|right|up|down)\b", "in that direction", b["does"])
-        elif b["base"].isdigit():
+        elif b["base"].isdigit() and uniform_digits(group["bindings"], b["mods"]):
             family = [x for x in group["bindings"] if x["mods"] == b["mods"] and x["base"].isdigit()]
             key, what = "1…0", re.sub(r"\bF\d+\b", "F1 to F10", re.sub(r"\b\d+\b", "1 to 10", b["does"]))
         if family and len(family) > 1:
@@ -194,7 +204,7 @@ def glance(groups: list[dict]) -> list[str]:
     for g in groups:
         for b in g["bindings"]:
             for c, (_, fits, word) in enumerate(columns):
-                if fits(b["base"]):
+                if fits(b["base"]) and (c != 1 or uniform_digits(g["bindings"], b["mods"])):
                     cells = table.setdefault(tuple(b["mods"]), [""] * len(columns))
                     cells[c] = cells[c] or word(b).capitalize()
     head = "| Hold | " + " | ".join(caps([], k) for k, _, _ in columns) + " |"

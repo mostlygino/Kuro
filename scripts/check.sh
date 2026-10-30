@@ -47,5 +47,6 @@ scripts/build-app.sh >"$tmp/app.log" 2>&1 || { fail "scripts/build-app.sh"; grep
 
 step "self-tests"
 [[ -x "$tmp/topguard" ]] && { "$tmp/topguard" --self-test >/dev/null || fail "topguard --self-test"; }
+[[ -x "$tmp/tiler" ]] && { "$tmp/tiler" --self-test >/dev/null || fail "tiler --self-test"; }
 
 (( failures == 0 )) && print -r -- "check: all passed" || { print -r -- "check: $failures failed"; exit 1; }

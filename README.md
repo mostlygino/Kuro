@@ -353,6 +353,7 @@ flowchart LR
 | `wifiinfo` | 125 | Reads the Wi-Fi link through CoreWLAN, from a Location-authorised bundle |
 | `topguard` | 116 | Keeps the macOS menu bar from coming down: an event tap holds the pointer below each screen's top strip, with an optional opening at the top centre (`MENUBAR_REVEAL_WIDTH`) |
 | `Kuro.app` | 2038 | The setup and manager app (`app/`, SwiftUI): onboarding, badges with live previews, your keys, health, updates |
+| `tiler` | 321 | Window layouts on AeroSpace, per screen: Columns, Rows, Side, the overflow stacked (⌥⌘ 1, 2, 3, 0) |
 | `zorder` | 71 | Checks no pill's window is stacked over its badges, for the bar's self-heal |
 | `vitalsinfo` | 41 | Reads CPU ticks and memory the way Activity Monitor counts them |
 | `ncstate` | 17 | Says whether Notification Center is on screen |
@@ -473,7 +474,7 @@ and the focused one wears a thin white border.
 | <kbd>⌘</kbd>&nbsp;<kbd>T</kbd> &nbsp;·&nbsp; <kbd>⌘</kbd>&nbsp;<kbd>J</kbd> &nbsp;·&nbsp; <kbd>⌥</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>F</kbd> | Float or tile · flip the split · fullscreen |
 | <kbd>⇧</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>/</kbd> | The interactive reference |
 
-All 89 bindings are in [`docs/KEYS.md`](docs/KEYS.md): keycaps, the layers at a
+All 93 bindings are in [`docs/KEYS.md`](docs/KEYS.md): keycaps, the layers at a
 glance, four sections. The interactive version, [`docs/keys.html`](docs/keys.html),
 is a keyboard that lights up under the modifiers you hold, with search; GitHub
 shows it as source, so open it locally or press <kbd>⇧</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>/</kbd>.
