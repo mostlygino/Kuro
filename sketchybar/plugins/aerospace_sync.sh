@@ -104,17 +104,25 @@ pgrep -xq AeroSpace || exit 0
 # pattern. So the bar does it, here, where AeroSpace is already asked one thing
 # at a time after the displays have settled.
 #
-# Everything is rebalanced when the screens change (and on wake and at start);
+# Everything is rebalanced when the set of screens changes (checked on a screen
+# change, on wake and at start) and when kuro.sh asks for it (`forced`);
 # otherwise only a workspace that has just been created is placed, so one you
 # moved by hand with ⌘⇧⌥ + arrow stays where you put it until the next change.
 KNOWN_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/sketchybar/aerospace-workspaces"
+# The screens the last full rebalance was for. A wake or a bar reload with the
+# same screens is not a screen change: until 2026-10-30 each one rebalanced
+# anyway, switching what every screen showed and, through focus-monitor and
+# on-focused-monitor-changed, throwing the pointer from screen to screen. With
+# the bar reloading after every wake that was most of what "Kuro keeps
+# crashing my displays" was.
+SCREENS_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/sketchybar/aerospace-screens"
 
 place_workspaces() {
   local monitors main others=() order=() line id is_main n base extra ws=1 i k size
-  monitors=$("$AEROSPACE" list-monitors --format '%{monitor-id}|%{monitor-is-main}' 2>/dev/null)
+  monitors=$("$AEROSPACE" list-monitors --format '%{monitor-id}|%{monitor-is-main}|%{monitor-name}' 2>/dev/null)
   [[ -n "$monitors" ]] || return
   for line in "${(@f)monitors}"; do
-    id="${line%%|*}" is_main="${line##*|}"
+    id="${line%%|*}" is_main="${${line#*|}%%|*}"
     if [[ "$is_main" == true ]]; then main="$id"; else others+=("$id"); fi
   done
   [[ -n "$main" ]] || return
@@ -131,8 +139,14 @@ place_workspaces() {
   local listing known=" " current=" " name monitor rest visible
   listing=$("$AEROSPACE" list-workspaces --all --format '%{workspace}|%{monitor-id}|%{workspace-is-visible}' 2>/dev/null)
   [[ -r "$KNOWN_FILE" ]] && known=" $(<"$KNOWN_FILE") "
-  local everything=false
-  [[ "$SENDER" == display_change || "$SENDER" == system_woke || -z "$SENDER" || "$SENDER" == forced ]] && everything=true
+  local everything=false screens
+  screens="${(j: :)${(@o)${(f)monitors}}}"
+  if [[ "$SENDER" == forced ]]; then
+    everything=true
+  elif [[ "$SENDER" == display_change || "$SENDER" == system_woke || -z "$SENDER" ]]; then
+    [[ -r "$SCREENS_FILE" && "$(<"$SCREENS_FILE")" == "$screens" ]] || everything=true
+  fi
+  [[ "$everything" == true ]] && print -r -- "$screens" > "$SCREENS_FILE"
   for line in "${(@f)listing}"; do
     name="${line%%|*}" rest="${line#*|}"
     monitor="${rest%%|*}" visible="${rest##*|}"
