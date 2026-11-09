@@ -544,9 +544,9 @@ Code: AGPL-3.0-or-later ([LICENSE](LICENSE)). Name, icon and artwork: all rights
 
 <a href="https://mostlygino.com">
   <picture>
-    <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mostlygino/mostlygino/main/assets/signoff/built-with-love-dark-mobile.svg?v=bdcb5510">
-    <source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/mostlygino/mostlygino/main/assets/signoff/built-with-love-light-mobile.svg?v=bdcb5510">
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mostlygino/mostlygino/main/assets/signoff/built-with-love-dark.svg?v=b9c22edb">
-    <img src="https://raw.githubusercontent.com/mostlygino/mostlygino/main/assets/signoff/built-with-love-light.svg?v=b9c22edb" alt="Designed and built with love by Gino, with his signature writing itself. Visit mostlygino.com." width="100%">
+    <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mostlygino/mostlygino/main/assets/signoff/built-with-love-dark-mobile.svg?v=052e60d1">
+    <source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/mostlygino/mostlygino/main/assets/signoff/built-with-love-light-mobile.svg?v=052e60d1">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mostlygino/mostlygino/main/assets/signoff/built-with-love-dark.svg?v=152ae522">
+    <img src="https://raw.githubusercontent.com/mostlygino/mostlygino/main/assets/signoff/built-with-love-light.svg?v=152ae522" alt="Designed and built with love by Gino, with his signature writing itself. Visit mostlygino.com." width="100%">
   </picture>
 </a>
