@@ -6,9 +6,11 @@
 # neutral greys off the Apple system palette instead: the only colour on the bar
 # is whatever album art happens to be spinning.
 
-# The bar draws nothing; these dress the two brackets. Slightly translucent so
-# the desktop reads through the pills, which is the point of clearing the middle.
-export PILL_COLOR=0xd91c1c1e
+# The bar draws nothing; these dress the two brackets. Glass since 2026-11-14:
+# about a third opaque, so the wallpaper reads through the pills the way it does
+# through macOS's own Liquid Glass. It was 85% graphite (0xd91c1c1e) before,
+# which sat on a bright wallpaper as a dark slab.
+export PILL_COLOR=0x592c2c2e
 # 30pt in the 34pt bar band (y 8..38). The 28pt media disc has to fit inside the
 # pill; at PILL_HEIGHT=26 it bulged past the fill and broke the silhouette.
 # Changing this moves AeroSpace's outer.top, which measures from the pill's
@@ -33,10 +35,17 @@ export PILL_RADIUS=17
 # constant.
 export BAR_HEIGHT=66
 export PILL_Y=8
-export SHADOW_COLOR=0x80000000
+# No shadow: under a see-through pill a shadow shows through the fill as a
+# second pill, 3pt lower, and the bar reads as two stacked bars.
+export SHADOW_COLOR=0x00000000
 
 export BAR_COLOR=0xff1c1c1e
-export BORDER_COLOR=0x59ffffff
+# The glass edge: a hairline of white, softer than the 35% it was on graphite.
+export BORDER_COLOR=0x40ffffff
+# Hover cards carry text, so they keep more body than the pills, and frost what
+# is behind them instead of showing it sharp.
+export CARD_COLOR=0x8c1c1c1e
+export CARD_BLUR=40
 # Where every hover card rests under its badge. hoverwatch animates each card
 # in from 4pt above this and needs the resting value to land on, so it is one
 # constant here rather than a literal per card.
