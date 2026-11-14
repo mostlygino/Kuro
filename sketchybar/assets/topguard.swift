@@ -90,8 +90,45 @@ CGDisplayRegisterReconfigurationCallback({ _, flags, _ in
     if !flags.contains(.beginConfigurationFlag) { readScreens() }
 }, nil)
 
+// A click on the bar inside the menu bar's own strip brings the menu bar down
+// too, on macOS 27 (2026-11-14). While the menu bar is hidden, MenuBarAgent
+// keeps an invisible window over the strip (layer 25, the screen's width, 39pt
+// deep on the notched built-in; the real "Menubar" window waits at y -39), so
+// the click lands on that catcher and not on the bar under it. A badge clicked
+// at 31pt revealed the menu bar, the same badge at 44pt did not. So a click
+// that the catcher would take from SketchyBar is moved down to `clickDepth`,
+// still inside the 34pt pill (y 14..48), where the item under it is the same
+// one. Once the real menu bar is down, the catcher is gone and its clicks are
+// left alone, as are a native full-screen app's up there.
+// ponytail: 40 covers the 38pt notch strip; read each screen's menu bar height
+// if a taller one turns up.
+let clickDepth: CGFloat = 40
+
+/// Whether the hidden menu bar's catcher is the topmost window at `p` and
+/// SketchyBar is the first real window under it. One window-list read per
+/// click, which is rare enough to be free.
+func onBar(_ p: CGPoint) -> Bool {
+    guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else { return false }
+    var caught = false
+    for info in list {
+        guard let b = info[kCGWindowBounds as String] as? [String: CGFloat],
+              CGRect(x: b["X"] ?? 0, y: b["Y"] ?? 0, width: b["Width"] ?? 0, height: b["Height"] ?? 0).contains(p) else { continue }
+        let owner = info[kCGWindowOwnerName as String] as? String
+        if owner == "MenuBarAgent" && (info[kCGWindowLayer as String] as? Int) == 25 { caught = true; continue }
+        return caught && owner == "sketchybar"
+    }
+    return false
+}
+
+func clickHeld(_ p: CGPoint) -> CGPoint? {
+    guard let screen = screens.first(where: { $0.contains(p) }), p.y < screen.minY + clickDepth,
+          abs(p.x - screen.midX) >= gap / 2, onBar(p) else { return nil }
+    return CGPoint(x: p.x, y: screen.minY + clickDepth)
+}
+
 let moves: [CGEventType] = [.mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged]
-let mask = moves.reduce(CGEventMask(0)) { $0 | (1 << $1.rawValue) }
+let clicks: [CGEventType] = [.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp, .otherMouseDown, .otherMouseUp]
+let mask = (moves + clicks).reduce(CGEventMask(0)) { $0 | (1 << $1.rawValue) }
 var tap: CFMachPort?
 tap = CGEvent.tapCreate(
     tap: .cghidEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: mask,
@@ -102,6 +139,10 @@ tap = CGEvent.tapCreate(
             return Unmanaged.passUnretained(event)
         }
         let p = event.location
+        if clicks.contains(type) {
+            if let q = clickHeld(p) { event.location = q }
+            return Unmanaged.passUnretained(event)
+        }
         let q = guarded(p, screens: screens, gap: gap)
         if q != p { event.location = q }
         return Unmanaged.passUnretained(event)
