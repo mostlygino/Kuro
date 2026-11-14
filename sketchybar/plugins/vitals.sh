@@ -39,14 +39,18 @@ CPU_DEADBAND=3
 RAM_HEAT_FROM=60
 # How much each new poll moves the CPU average.
 SMOOTHING=0.6
+# The monitor app the badge stands for: what the card opens, and whose absence
+# kills the ghost. Mole (tw93) since 2026-11-14; Vitals before.
+export MONITOR_APP="${MONITOR_APP:-Mole}"
+MONITOR_ID="${MONITOR_ID:-com.tw93.MoleApp}"
 
 # `vitals.sh open`: the card's way into Vitals. Opening it while it runs brings
 # up its Overview window; opening it cold only starts it, menu bar side, so it is
 # asked a second time once it is up.
 if [[ "$1" == open ]]; then
-  running=$(/usr/bin/pgrep -x Vitals)
-  /usr/bin/open -b com.forestudio.Vitals || exit 0
-  [[ -n "$running" ]] || { sleep 1.5; /usr/bin/open -b com.forestudio.Vitals; }
+  running=$(/usr/bin/pgrep -x "$MONITOR_APP")
+  /usr/bin/open -b "$MONITOR_ID" || exit 0
+  [[ -n "$running" ]] || { sleep 1.5; /usr/bin/open -b "$MONITOR_ID"; }
   exit 0
 fi
 
@@ -88,7 +92,7 @@ read -r busy total used memtotal <<< "$("$PROBE" 2>/dev/null)"
 pressure=$(/usr/sbin/sysctl -n kern.memorystatus_vm_pressure_level 2>/dev/null)
 # Whether the Vitals app itself is running. Not, and the ghost is dead.
 running=no
-/usr/bin/pgrep -xq Vitals && running=yes
+/usr/bin/pgrep -xq "$MONITOR_APP" && running=yes
 # The busiest process with its full path, so a helper can be named after the
 # app it belongs to: "Microsoft Teams ModuleHost" lives inside Microsoft
 # Teams.app, and the card says Microsoft Teams.
@@ -100,7 +104,7 @@ prev_busy="" prev_total="" average="" step=""
 result=$(/usr/bin/python3 - "$busy" "$total" "${prev_busy:-}" "${prev_total:-}" "${average:-}" "${step:-}" \
   "$used" "$memtotal" "${pressure:-1}" "${top_cpu:-0}" "${top_path:-}" \
   "$DETAIL_FILE" "$CPU_STEP" "$CPU_DEADBAND" "$SMOOTHING" "$running" "$RAM_HEAT_FROM" <<'PY'
-import pathlib, sys
+import os, pathlib, sys
 (busy, total, prev_busy, prev_total, average, step, used, memtotal, pressure,
  top_cpu, top_path, detail, cpu_step, cpu_deadband, smoothing, running, ram_heat_from) = sys.argv[1:]
 busy, total, used, memtotal = int(busy), int(total), int(used), int(memtotal)
@@ -162,8 +166,8 @@ rows = [
     ("vitals.memory", "Memory", f"{used / gb:.1f} of {memtotal / gb:.0f} GB · {ram:.0f}%", "0xfff5f5f7"),
     ("vitals.pressure", "Memory pressure", words.get(pressure, "Normal"), pressure_colour),
     ("vitals.busiest", "Busiest", f"{name} · {float(top_cpu):.0f}%", "0xfff5f5f7"),
-    ("vitals.open", "Temperatures, GPU, disks", "Open Vitals", "0xff64d2ff") if running == "yes"
-    else ("vitals.open", "Vitals is not running", "Start", "0xff32d74b"),
+    ("vitals.open", "Clean, disks, status", f"Open {os.environ['MONITOR_APP']}", "0xff64d2ff") if running == "yes"
+    else ("vitals.open", f"{os.environ['MONITOR_APP']} is not running", "Start", "0xff32d74b"),
 ]
 pathlib.Path(detail).write_text("".join(f"{i}\t{a}\t{b}\t{c}\n" for i, a, b, c in rows), encoding="utf-8")
 # A dead ghost is one key whatever the load, so the load moving while Vitals
