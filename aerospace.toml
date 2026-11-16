@@ -75,6 +75,26 @@ outer.bottom     = 40
 outer.top        = [{ monitor.'built-in' = 46 }, 84]
 outer.right      = 40
 
+# Workspace numbers belong to screens: 1-5 on the main screen, 6-10 on the
+# second. AeroSpace makes a workspace on its own screen the moment it is first
+# asked for, so ⌘7 opens 7 on the second screen instead of the main one. Before
+# this only the bar placed them (aerospace_sync.sh, place_workspaces), after
+# the fact, and it never moves one that is on screen, so a new 6-10 stayed on
+# the main screen until you left it. With one screen, 6-10 fall back to main.
+# ponytail: fixed for one or two screens; with three the bar's 1-4/5-7/8-10
+# split is fought by this, make it per-monitor-name if a third comes back.
+[workspace-to-monitor-force-assignment]
+1 = 'main'
+2 = 'main'
+3 = 'main'
+4 = 'main'
+5 = 'main'
+6 = ['secondary', 'main']
+7 = ['secondary', 'main']
+8 = ['secondary', 'main']
+9 = ['secondary', 'main']
+10 = ['secondary', 'main']
+
 # ==========================================================================
 # Ported from Omarchy's default Hyprland bindings
 # (github.com/basecamp/omarchy default/hypr/bindings/*.lua, quattro branch)

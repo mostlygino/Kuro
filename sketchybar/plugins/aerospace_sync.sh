@@ -360,14 +360,21 @@ update_workspaces() {
 while true; do
   rm -f "$LOCK/again"
   tweens=() fallback=()
-  place_workspaces
+  # Focus moving between windows makes no workspace, so nothing to place: the
+  # two AeroSpace questions place_workspaces asks are skipped on the event that
+  # fires most.
+  [[ "$SENDER" == aerospace_focus_change ]] || place_workspaces
   update_workspaces
   if (( ${#tweens} )); then
     "$CONFIG_DIR/assets/motionwatch" tween "${tweens[@]}" 2>/dev/null \
       || sketchybar "${fallback[@]}"
   fi
-  # The app labels, one display after another rather than three at once.
-  for did in 1 2 3; do
+  # The app labels, one display after another rather than three at once, and
+  # only for displays there are: a missing one costs a whole script run to
+  # find out it has nothing to show.
+  screens_now=$(( $(sketchybar --query displays 2>/dev/null | grep -c '"arrangement-id"') ))
+  (( screens_now > 0 )) || screens_now=3
+  for (( did = 1; did <= screens_now; did++ )); do
     NAME="front_app.$did" "${0:A:h}/front_app.sh" "$did"
   done
   # The workspace pill may have changed width, and the Now Playing title is
