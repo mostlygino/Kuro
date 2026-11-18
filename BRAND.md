@@ -9,7 +9,7 @@ The **Kuro name and its brand assets are not covered by that licence.** They sta
 
 - the name "Kuro" and "黒" used as the name of this desktop;
 - the icon (the obsidian tile with 黒 inlaid) in `docs/brand/`: `master.png`, `icon.png`, `favicon-32.png`
-  and `favicon.ico`;
+  and `favicon.ico`, plus the copy of `favicon.ico` at the repo root;
 - the README banners and showcase cards in `docs/brand/` (`readme-*.svg`, `readme-theme.json`);
 - the screenshots and recordings in `docs/`: `bar-left.png`, `bar-right.png`, `card-*.png`, `anatomy.png`,
   `highlights.png`, `motion.gif`, `app-*.png`, and the mostlygino footer mark;
