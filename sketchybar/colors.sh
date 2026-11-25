@@ -43,8 +43,10 @@ export BAR_COLOR=0xff1c1c1e
 # The glass edge: a hairline of white, softer than the 35% it was on graphite.
 export BORDER_COLOR=0x40ffffff
 # Hover cards carry text, so they keep more body than the pills, and frost what
-# is behind them instead of showing it sharp.
-export CARD_COLOR=0x8c1c1c1e
+# is behind them instead of showing it sharp. 90% graphite since 2026-11-25: at
+# 55% (0x8c) a card over a white window frosted to light grey and the muted
+# row labels vanished into it. 90% keeps them near 4:1 over white.
+export CARD_COLOR=0xe61c1c1e
 export CARD_BLUR=40
 # Where every hover card rests under its badge. hoverwatch animates each card
 # in from 4pt above this and needs the resting value to land on, so it is one
