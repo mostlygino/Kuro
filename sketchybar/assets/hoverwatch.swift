@@ -207,14 +207,15 @@ let popupArriveMs = 220
 var popupStyles: [String: PopupStyle] = [:]
 
 // The resting style every card shares, from colors.sh through the environment
-// sketchybarrc exports. It used to be read back from each card the first time
+// sketchybarrc exports. The fill is CARD_COLOR, not the pills' glass: cards carry
+// text, and at the pills' 35% they washed out over a bright window. It used to be read back from each card the first time
 // it opened, which learned whatever was on screen at that moment: a card still
 // fading in after a restart, or a fade cut short, was cached half-transparent
 // and from then on faded in to that, a card with no background.
 let restingStyle: PopupStyle? = {
     let env = ProcessInfo.processInfo.environment
     guard let y = env["CARD_Y_OFFSET"].flatMap({ Int($0) }),
-          let fill = env["PILL_COLOR"], let border = env["BORDER_COLOR"],
+          let fill = env["CARD_COLOR"] ?? env["PILL_COLOR"], let border = env["BORDER_COLOR"],
           let shadow = env["SHADOW_COLOR"]
     else { return nil }
     return PopupStyle(yOffset: y, fill: fill, border: border, shadow: shadow)
