@@ -10,7 +10,11 @@
 # about a third opaque, so the wallpaper reads through the pills the way it does
 # through macOS's own Liquid Glass. It was 85% graphite (0xd91c1c1e) before,
 # which sat on a bright wallpaper as a dark slab.
-export PILL_COLOR=0x592c2c2e
+# 75% since 2026-11-26: at a third, a light wallpaper or a white window under
+# the bar washed the pills out and the text went with them. SketchyBar cannot
+# frost a bracket, so body is the only lever; 75% keeps white text near 6:1
+# over pure white and still lets a dark wallpaper's colour through.
+export PILL_COLOR=0xbf1c1c1e
 # 30pt in the 34pt bar band (y 8..38). The 28pt media disc has to fit inside the
 # pill; at PILL_HEIGHT=26 it bulged past the fill and broke the silhouette.
 # Changing this moves AeroSpace's outer.top, which measures from the pill's
@@ -53,7 +57,9 @@ export CARD_BLUR=40
 # constant here rather than a literal per card.
 export CARD_Y_OFFSET=-20
 export TEXT_COLOR=0xfff5f5f7
-export MUTED_COLOR=0xff8e8e93
+# Lighter than Apple's 8e8e93 since 2026-11-26, which fell under 2:1 on a pill
+# over a light screen.
+export MUTED_COLOR=0xffaeaeb2
 export TRANSPARENT=0x00000000
 
 # The visible workspace is an inverted chip: solid light fill, dark text. It was
@@ -107,7 +113,7 @@ export BAR_FONT_SIZE=14.5
 # title, MEDIA_ARTIST_COLOR the artist, which is the same grey the clock wears.
 export MEDIA_COLOR=0xfff5f5f7
 export MEDIA_PAUSED_COLOR=0x998e8e93
-export MEDIA_ARTIST_COLOR=0xff8e8e93
+export MEDIA_ARTIST_COLOR=0xffaeaeb2
 export MEDIA_ARTIST_PAUSED_COLOR=0x668e8e93
 
 # The `~` between title and artist, added 2026-09-07. Same grey as the artist but
