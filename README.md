@@ -525,8 +525,7 @@ Then restore any `*.backup-*` the installer made, and quit AeroSpace.
 
 ## Credits
 
-Built by [mostlygino](https://github.com/mostlygino), pair-programmed with
-[Claude Code](https://claude.com/claude-code). Standing on SketchyBar and
+Built by [mostlygino](https://github.com/mostlygino). Standing on SketchyBar and
 JankyBorders by Felix Kratz, AeroSpace by Nikita Bobko, and
 [media-control](https://github.com/ungive/media-control), which is what still
 reads Now Playing on current macOS.
