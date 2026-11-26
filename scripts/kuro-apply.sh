@@ -13,12 +13,21 @@
 # the main mode, at the `# kuro:local-bindings` line, and its tables go at the
 # end. The result is ~/.config/kuro/aerospace.toml, and ~/.aerospace.toml links
 # to it. A result AeroSpace rejects is rolled back to the last good one.
+#
+# Window gaps are a special case of the same problem: [gaps] already lives in
+# the repository's aerospace.toml, so it cannot be written a second time from
+# the local file. Instead the Kuro app leaves the sizes it chose in
+# ~/.config/kuro/gaps (outer=.. inner=..), and this shifts the repository's own
+# [gaps] values by the difference from their defaults. The per-monitor top gap
+# and its fixed bar/notch offset ride along with the outer value and are never
+# rewritten by hand, so the one place that defines the gaps stays the base file.
 
 set -u
 REPO="${0:A:h:h}"
 BASE="$REPO/aerospace.toml"
 KURO="${XDG_CONFIG_HOME:-$HOME/.config}/kuro"
 LOCAL="$KURO/aerospace.local.toml"
+GAPS="$KURO/gaps"
 OUT="$KURO/aerospace.toml"
 LINK="$HOME/.aerospace.toml"
 AEROSPACE=/opt/homebrew/bin/aerospace
@@ -40,6 +49,33 @@ say() {
 /usr/bin/grep -qxF "$MARKER" "$BASE" || { say "aerospace.toml has lost its '$MARKER' line"; exit 1; }
 mkdir -p "$KURO"
 
+# Adds a signed amount to every integer on one gap line, never below zero, so
+# `outer.top = [{ monitor.'built-in' = 46 }, 84]` moves both of its numbers at
+# once. Monitor names in [gaps] carry no digits ('built-in'), so only the gap
+# sizes are touched.
+adjust_gaps() { /usr/bin/perl -pe "s/(\\d+)/my \$n=\$1+($1); \$n<0?0:\$n/ge"; }
+
+# How far the app moved the gaps from the base file's own defaults. An absent
+# or malformed ~/.config/kuro/gaps leaves the base values exactly as they are.
+gaps_outer="" gaps_inner=""
+if [[ -r "$GAPS" ]]; then
+  while IFS='=' read -r gk gv; do
+    gv="${gv//[[:space:]]/}"
+    case "$gk" in
+      outer) [[ "$gv" == <-> ]] && gaps_outer="$gv" ;;
+      inner) [[ "$gv" == <-> ]] && gaps_inner="$gv" ;;
+    esac
+  done < "$GAPS"
+fi
+base_outer=$(/usr/bin/grep -E '^[[:space:]]*outer\.left' "$BASE" | /usr/bin/grep -oE '[0-9]+' | head -1)
+base_inner=$(/usr/bin/grep -E '^[[:space:]]*inner\.horizontal' "$BASE" | /usr/bin/grep -oE '[0-9]+' | head -1)
+outer_delta=0 inner_delta=0
+[[ -n "$gaps_outer" && -n "$base_outer" ]] && outer_delta=$(( gaps_outer - base_outer ))
+[[ -n "$gaps_inner" && -n "$base_inner" ]] && inner_delta=$(( gaps_inner - base_inner ))
+# The top gap holds the bar as well as the margin (84 = the bar's 48 + 36), so
+# it only ever grows: shrinking it with outer would slide windows under the bar.
+top_delta=$(( outer_delta > 0 ? outer_delta : 0 ))
+
 bindings=() tables=()
 if [[ -r "$LOCAL" ]]; then
   in_tables=false
@@ -51,7 +87,21 @@ fi
 
 new="$OUT.new.$$"
 {
+  in_gaps=false
   while IFS= read -r line || [[ -n "$line" ]]; do
+    # Inside [gaps], shift the outer and inner lines by the app's amounts.
+    if [[ "$line" == "[gaps]" ]]; then
+      in_gaps=true
+    elif [[ "$line" == \[* ]]; then
+      in_gaps=false
+    fi
+    if [[ "$in_gaps" == true ]]; then
+      case "$line" in
+        outer.top*) (( top_delta != 0 )) && line=$(print -r -- "$line" | adjust_gaps $top_delta) ;;
+        outer.*) (( outer_delta != 0 )) && line=$(print -r -- "$line" | adjust_gaps $outer_delta) ;;
+        inner.*) (( inner_delta != 0 )) && line=$(print -r -- "$line" | adjust_gaps $inner_delta) ;;
+      esac
+    fi
     print -r -- "$line"
     if [[ "$line" == "$MARKER" && ${#bindings} -gt 0 ]]; then
       print -r -- "# --- From $LOCAL ---"
