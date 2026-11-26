@@ -1250,7 +1250,7 @@ func discCacheKey(artworkHash: String, source: MediaSource) -> String {
     case .youtube: return cachePrefix + "icon-v4-youtube"
     case .browser: return cachePrefix + "icon-v4-browser"
     case .call: return cachePrefix + "icon-v4-call"
-    case .service(let service): return cachePrefix + "mark-v1-" + service.rawValue
+    case .service(let service): return cachePrefix + "mark-v2-" + service.rawValue
     case .videoApp(let bundleID): return cachePrefix + "app-v1-" + bundleID
     case .silence: return cachePrefix + "silence-v6"
     }

@@ -29,7 +29,7 @@ SIGN_ID="${MEDIAWATCH_SIGN_ID:-}"
 needs_build() {
   [[ ! -x "$WATCHER" ]] && return 0
   for src in mediawatch.swift mediatap.swift mediafit.swift mediaservice.swift mediacall.swift main.swift \
-             sketchybar_ipc.c sketchybar_ipc.h mediawatch-Info.plist; do
+             sketchybar_ipc.c sketchybar_ipc.h mediawatch-Info.plist mediawatch.entitlements; do
     [[ "$ASSETS/$src" -nt "$WATCHER" ]] && return 0
   done
   return 1
@@ -56,7 +56,7 @@ if needs_build; then
   fi
   if [[ -n "$SIGN_ID" ]] && /usr/bin/security find-identity -v -p codesigning 2>/dev/null \
       | grep -qF "$SIGN_ID"; then
-    /usr/bin/codesign --force --options runtime --sign "$SIGN_ID" "$APP" \
+    /usr/bin/codesign --force --options runtime --entitlements "$ASSETS/mediawatch.entitlements" --sign "$SIGN_ID" "$APP" \
       >/dev/null 2>&1 \
       || echo "media_watch.sh: signing failed, live waveform will fall back" >&2
   else
