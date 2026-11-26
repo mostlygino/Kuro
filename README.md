@@ -392,7 +392,7 @@ on, all of it or the bar and the window manager apart: off, the macOS menu bar
 comes back and windows stay where they are; on, each window returns to the
 workspace it had. Off stays off across a restart. `scripts/kuro.sh on|off
 [bar|windows]` is the same switch from a terminal. The rest: badges, the menu bar opening, the
-clock's calendar, agent spaces, your keys, and updates, which pull from GitHub,
+clock's calendar, agent spaces, the gaps around your windows, your keys, and updates, which pull from GitHub,
 rebuild what changed and list it first. Permissions are inferred from what is
 running and said so where they cannot be known; macOS does not let one app read
 another's. The screenshots are `--demo` mode, a made-up Mac
@@ -490,6 +490,7 @@ always what the Mac does.
 |---|---|
 | `~/.config/kuro/settings` | Which badges, what the clock opens, the menu bar opening. `key=value` lines, read (never run) by `colors.sh`, so only known keys of the right shape count. |
 | `~/.config/kuro/aerospace.local.toml` | Your own AeroSpace bindings and modes. `scripts/kuro-apply.sh` (and <kbd>⌥</kbd>&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>C</kbd>) merges them into `~/.aerospace.toml`, checks the result with AeroSpace and rolls back if it is rejected. Plain bindings go into the main mode, tables at the end. |
+| `~/.config/kuro/gaps` | The window gaps you set in the app: `outer=` for the screen edges, `inner=` between windows. `scripts/kuro-apply.sh` shifts `aerospace.toml`'s `[gaps]` by the difference from its defaults, so an update never fights you. |
 | `sketchybar/local.sh` | The rest, as shell, never committed; it wins over the settings file. Created from `local.sh.example`: a signing identity so macOS remembers the watchers' permissions, what clicking the app name does, an SSH tunnel row for the Tailscale card. |
 | `sketchybar/colors.sh` | Palette, fonts, pill sizes, the one gap used everywhere, card widths. |
 | `aerospace.toml` | Kuro's keybindings and gaps. Edit your own file above rather than this one, and `git pull` never fights you. |

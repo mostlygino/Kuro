@@ -66,6 +66,11 @@ exec-on-workspace-change = [
 #
 # 2026-10-14: both values +6 (40/78 to 46/84) because PILL_Y went from 14 to 8
 # and the pills moved 6pt down with it.
+#
+# These are the defaults. The Kuro app's Window gaps pane can shift them per
+# Mac: it leaves the chosen outer and inner sizes in ~/.config/kuro/gaps, and
+# scripts/kuro-apply.sh moves every value here by the difference, so the two
+# top numbers (and their bar offset) ride along without being edited by hand.
 
 [gaps]
 inner.horizontal = 16
