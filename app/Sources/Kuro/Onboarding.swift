@@ -11,7 +11,7 @@ struct OnboardingView: View {
     @State private var busy = false
 
     enum Step: String, CaseIterable, Identifiable {
-        case welcome, requirements, source, install, badges, menuBar, start, permissions
+        case welcome, requirements, source, install, badges, menuBar, start, permissions, keys
         var id: String { rawValue }
         var title: String {
             switch self {
@@ -20,9 +20,10 @@ struct OnboardingView: View {
             case .source: "Get Kuro"
             case .install: "Install the parts"
             case .badges: "Your badges"
-            case .menuBar: "The menu bar"
+            case .menuBar: "Menu bar and Dock"
             case .start: "Start"
             case .permissions: "Permissions"
+            case .keys: "Keys to know"
             }
         }
     }
@@ -84,7 +85,8 @@ struct OnboardingView: View {
         case .install: model.state.partsInstalled && model.state.linked
         case .badges, .menuBar: index(step) > index(s)
         case .start: model.state.running.contains(.sketchybar) && model.state.running.contains(.aerospace)
-        case .permissions: false
+        case .permissions: index(step) > index(s)
+        case .keys: false
         }
     }
 
@@ -168,6 +170,8 @@ struct OnboardingView: View {
                     .buttonStyle(ChipButtonStyle()).disabled(busy).keyboardShortcut(.defaultAction)
             }
         case .permissions:
+            Button("Continue") { advance() }.buttonStyle(ChipButtonStyle()).keyboardShortcut(.defaultAction)
+        case .keys:
             Button("Finish") { finish() }.buttonStyle(ChipButtonStyle()).keyboardShortcut(.defaultAction)
         }
     }
@@ -196,6 +200,7 @@ struct OnboardingView: View {
         case .menuBar: MenuBarStep(model: model, run: run)
         case .start: StartStep(model: model)
         case .permissions: PermissionsStep(model: model)
+        case .keys: KeysStep()
         }
     }
 }
@@ -233,7 +238,7 @@ struct WelcomeStep: View {
                 .lede()
             VStack(alignment: .leading, spacing: 8) {
                 fact("arrow.down.circle", "Most of the wait is Homebrew downloading the parts.")
-                fact("lock.shield", "macOS asks for two or three permissions on the way; the last step says which.")
+                fact("lock.shield", "macOS asks for a few permissions on the way; the Permissions step says which and why.")
                 fact("arrow.uturn.backward", "Undo is in the README: remove the links and restore the backups.")
             }
         }
@@ -382,8 +387,26 @@ struct MenuBarStep: View {
     let run: (@escaping () async -> Void) -> Void
 
     var body: some View {
-        Text("The bar sits where the macOS menu bar is, so the menu bar is set to hide itself, and Kuro keeps it from sliding down whenever the pointer touches the top of the screen.")
+        Text("The bar sits where the macOS menu bar is. So the menu bar has to hide itself, and Kuro keeps it from sliding down whenever the pointer touches the top of the screen.")
             .lede()
+        VStack(spacing: 0) {
+            StatusRow(mark: model.state.menuBarHides ? .done : .attention, title: "Hide the macOS menu bar",
+                      detail: model.state.menuBarHides ? "Hidden. The bar has the top of the screen."
+                                                       : "Needed: otherwise the menu bar covers the bar. Starting Kuro does it too.") {
+                if !model.state.menuBarHides {
+                    Button("Hide it") { run { await model.setMenuBarHides(true) } }.buttonStyle(PillButtonStyle())
+                }
+            }
+            Divider().overlay(Kuro.hairline)
+            StatusRow(mark: model.state.dockHides ? .done : .waiting, title: "Hide the Dock",
+                      detail: model.state.dockHides ? "Hidden until the pointer reaches it. Windows get the full height."
+                                                    : "Optional. A Dock that stays takes room from every window.") {
+                Button(model.state.dockHides ? "Keep it shown" : "Hide it") {
+                    let hides = !model.state.dockHides
+                    run { await model.setDockHides(hides) }
+                }.buttonStyle(PillButtonStyle())
+            }
+        }
         Block(title: "Bring the menu bar back from the middle",
               detail: "An opening at the top centre of each screen where resting the pointer still shows the macOS menu bar. Everywhere else it stays away.") {
             Picker("Opening", selection: $model.settings.menuBarOpening) {
@@ -453,9 +476,50 @@ struct PermissionsStep: View {
                 Button("Open Settings") { model.openSettingsPane("Privacy_ScreenCapture") }.buttonStyle(PillButtonStyle())
             }
             Divider().overlay(Kuro.hairline)
+            StatusRow(mark: .waiting, title: "Now Playing · Automation",
+                      detail: "Reads your browser's tab addresses, so it can show Tidal, YouTube or Netflix instead of a globe. macOS asks once per browser.") {
+                Button("Open Settings") { model.openSettingsPane("Privacy_Automation") }.buttonStyle(PillButtonStyle())
+            }
+            Divider().overlay(Kuro.hairline)
             StatusRow(mark: .waiting, title: "Wi-Fi badge · Location",
                       detail: "macOS counts a network's name as location; it asks once.") {
                 Button("Open Settings") { model.openSettingsPane("Privacy_LocationServices") }.buttonStyle(PillButtonStyle())
+            }
+        }
+    }
+}
+
+/// The last step: the handful of keys that make the desktop usable on day one.
+/// The rest are in aerospace.toml and the README.
+struct KeysStep: View {
+    private let keys: [(String, String)] = [
+        ("⌘ 1 … 0", "Go to workspace 1 to 10. With two screens, 1–5 are on the main one, 6–10 on the second."),
+        ("⇧ ⌘ 1 … 0", "Send the window to that workspace, and follow it."),
+        ("⌘ ← ↑ → ↓", "Focus the window next to this one."),
+        ("⇧ ⌘ ← ↑ → ↓", "Swap the window with its neighbour."),
+        ("⌥ ⌘ 1 / 2 / 3", "This screen's layout: side by side, stacked, or one large window with the rest beside it. Kept per screen."),
+        ("⌥ ⌘ 0", "Layout off: arrange this screen by hand."),
+        ("⌘ T", "Float the window, or tile it again."),
+        ("⌘ − / ⌘ =", "Make the window smaller or larger."),
+    ]
+
+    var body: some View {
+        Text("Kuro is driven from the keyboard. These are the ones to learn first; Your keys in the Kuro app adds your own.")
+            .lede()
+        VStack(spacing: 0) {
+            ForEach(Array(keys.enumerated()), id: \.offset) { index, key in
+                if index > 0 { Divider().overlay(Kuro.hairline) }
+                HStack(alignment: .firstTextBaseline, spacing: 16) {
+                    Text(key.0)
+                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Kuro.text)
+                        .frame(width: 118, alignment: .leading)
+                    Text(key.1).font(.system(size: 12.5)).foregroundStyle(Kuro.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(.vertical, 9)
+                .accessibilityElement(children: .combine)
             }
         }
     }

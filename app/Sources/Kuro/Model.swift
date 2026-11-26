@@ -53,6 +53,7 @@ struct SystemState: Equatable {
     var aerospaceLinked = false
     var launchAgent = false
     var menuBarHides = false
+    var dockHides = false
     var agentOpen = false
     var macOSMajor = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
 
@@ -86,6 +87,8 @@ struct SystemState: Equatable {
         state.launchAgent = fm.fileExists(atPath: Places.launchAgent.path)
         // The global domain is read whole: a suite named after it reads nothing.
         state.menuBarHides = (UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["_HIHideMenuBar"]
+            as? NSNumber)?.boolValue ?? false
+        state.dockHides = (UserDefaults.standard.persistentDomain(forName: "com.apple.dock")?["autohide"]
             as? NSNumber)?.boolValue ?? false
         state.agentOpen = fm.fileExists(atPath: Places.agentOpen.path)
         return state
@@ -221,6 +224,16 @@ final class KuroModel {
         await console.run("/bin/zsh", [kuro, "menubar", hides ? "hide" : "show"], in: repo,
                           title: "scripts/kuro.sh menubar \(hides ? "hide" : "show")")
         if demo != nil { state.menuBarHides = hides } else { await refresh() }
+    }
+
+    /// The Dock's own auto-hide, which macOS keeps in com.apple.dock. Optional:
+    /// AeroSpace tiles around a Dock that stays, it just leaves less room.
+    func setDockHides(_ hides: Bool) async {
+        if demo != nil { state.dockHides = hides; return }
+        await console.run("/usr/bin/defaults", ["write", "com.apple.dock", "autohide", "-bool", hides ? "true" : "false"],
+                          title: "defaults write com.apple.dock autohide -bool \(hides)")
+        await console.run("/usr/bin/killall", ["Dock"], title: "killall Dock")
+        await refresh()
     }
 
     /// The parts that switch on and off (scripts/kuro.sh).
