@@ -21,13 +21,13 @@ import CoreText
 
 enum WebService: String, CaseIterable {
     case netflix, youtube, youtubeMusic, twitch, disney, prime, appleTV, vimeo
-    case soundcloud, spotifyWeb, appleMusicWeb
+    case soundcloud, spotifyWeb, appleMusicWeb, tidal
 
     /// Music services keep the artist beside the title; video ones treat it as
     /// the channel, which the title usually already carries.
     var isVideo: Bool {
         switch self {
-        case .youtubeMusic, .soundcloud, .spotifyWeb, .appleMusicWeb: return false
+        case .youtubeMusic, .soundcloud, .spotifyWeb, .appleMusicWeb, .tidal: return false
         default: return true
         }
     }
@@ -48,6 +48,7 @@ func webService(forURL raw: String) -> WebService? {
     if on("vimeo.com") { return .vimeo }
     if on("soundcloud.com") { return .soundcloud }
     if host == "open.spotify.com" { return .spotifyWeb }
+    if on("tidal.com") { return .tidal }
     return nil
 }
 
@@ -192,7 +193,8 @@ func symbolMark(for service: WebService) -> SlotIcon? {
         return SlotIcon(symbol: "music.note", palette: [rgb(0.98, 0.18, 0.28)], motion: .breathe)
     // Apple TV on the web wears the Apple TV app's own icon: its symbol comes
     // out as a blank tile in one colour.
-    case .netflix, .disney, .vimeo, .appleTV:
+    // Tidal's mark is its four diamonds, drawn by drawTidalMark.
+    case .netflix, .disney, .vimeo, .appleTV, .tidal:
         return nil
     }
 }
@@ -223,6 +225,26 @@ func drawGlyphMark(_ mark: GlyphMark, into ctx: CGContext, size: Int, phase: CGF
     ctx.textPosition = CGPoint(x: (canvas - bounds.width) / 2 - bounds.minX,
                                y: (canvas - bounds.height) / 2 - bounds.minY)
     CTLineDraw(line, ctx)
+}
+
+/// Tidal's mark: three diamonds in a row, tip to tip, and a fourth under the
+/// middle one, in white. No SF Symbol or letter stands in for it.
+func drawTidalMark(into ctx: CGContext, size: Int, phase: CGFloat) {
+    let canvas = CGFloat(size)
+    ctx.clear(CGRect(x: 0, y: 0, width: canvas, height: canvas))
+    let (alpha, grow) = breath(phase)
+    let h = canvas * 0.84 * grow / 3          // half a diamond's diagonal
+    let cx = canvas / 2, cy = canvas / 2 + h / 2
+    ctx.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: alpha))
+    for (dx, dy) in [(-2 * h, 0), (0, 0), (2 * h, 0), (0, -2 * h)] as [(CGFloat, CGFloat)] {
+        let x = cx + dx, y = cy + dy
+        ctx.move(to: CGPoint(x: x, y: y + h))
+        ctx.addLine(to: CGPoint(x: x + h, y: y))
+        ctx.addLine(to: CGPoint(x: x, y: y - h))
+        ctx.addLine(to: CGPoint(x: x - h, y: y))
+        ctx.closePath()
+    }
+    ctx.fillPath()
 }
 
 /// A video app's own icon, breathing, for the slot.
@@ -281,6 +303,7 @@ func serviceSelfTest(_ expect: (Bool, String) -> Void) {
     expect(webService(forURL: "https://m.youtube.com/watch?v=x") == .youtube, "youtube on a subdomain")
     expect(webService(forURL: "https://www.amazon.de/gp/video/detail/x") == .prime, "prime on amazon")
     expect(webService(forURL: "https://example.com") == nil, "unknown hosts are nothing")
+    expect(webService(forURL: "https://listen.tidal.com/album/1") == .tidal, "tidal on its player host")
     let tabs = "https://www.youtube.com/watch?v=a\tLofi Girl - YouTube\nhttps://www.netflix.com/watch/1\tNetflix\n"
     expect(serviceFromTabs(tabs, playingTitle: "Lofi Girl") == .youtube, "the tab with the title wins")
     expect(serviceFromTabs("https://www.netflix.com/watch/1\tNetflix\nhttps://a.com\tA\n",
@@ -288,6 +311,6 @@ func serviceSelfTest(_ expect: (Bool, String) -> Void) {
            "the one streaming tab when no title matches")
     expect(serviceFromTabs(tabs, playingTitle: "Something else") == nil, "two services and no match is no answer")
     expect(WebService.allCases.allSatisfy {
-        glyphMark(for: $0) != nil || symbolMark(for: $0) != nil || standInApp(for: $0) != nil
+        $0 == .tidal || glyphMark(for: $0) != nil || symbolMark(for: $0) != nil || standInApp(for: $0) != nil
     }, "every service has a mark")
 }
