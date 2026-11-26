@@ -1724,6 +1724,8 @@ func renderDiscFrames(image: CGImage?, key: String, source: MediaSource) throws 
     case .silence: return try renderMarkFrames(key: key) { drawSilenceMark(into: $0, size: $1, phase: $2) }
     case .music: return try renderFrames(image: image, key: key)
     case .podcast: return try renderDiscWaveFrames(key: key)
+    case .service(.tidal):
+        return try renderMarkFrames(key: key) { drawTidalMark(into: $0, size: $1, phase: $2) }
     case .service(let service):
         if let mark = glyphMark(for: service) {
             return try renderMarkFrames(key: key) { drawGlyphMark(mark, into: $0, size: $1, phase: $2) }
@@ -3793,7 +3795,7 @@ func hasAppIcon(_ bundleID: String) -> Bool {
 /// the same frame and show at the same scale as the symbol icons.
 func drawnAsMark(_ source: MediaSource) -> Bool {
     switch source {
-    case .service(let service): return glyphMark(for: service) != nil || standInApp(for: service) != nil
+    case .service(let service): return service == .tidal || glyphMark(for: service) != nil || standInApp(for: service) != nil
     case .videoApp, .silence: return true
     default: return false
     }
