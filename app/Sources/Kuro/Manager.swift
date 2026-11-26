@@ -9,13 +9,14 @@ struct ManagerView: View {
     @State private var section: Pane = .health
 
     enum Pane: String, CaseIterable, Identifiable {
-        case health, badges, general, keys, updates
+        case health, badges, general, gaps, keys, updates
         var id: String { rawValue }
         var title: String {
             switch self {
             case .health: "Health"
             case .badges: "Badges"
             case .general: "Menu bar and clock"
+            case .gaps: "Window gaps"
             case .keys: "Your keys"
             case .updates: "Updates"
             }
@@ -25,6 +26,7 @@ struct ManagerView: View {
             case .health: "waveform.path.ecg"
             case .badges: "capsule.portrait"
             case .general: "menubar.rectangle"
+            case .gaps: "rectangle.inset.filled"
             case .keys: "keyboard"
             case .updates: "arrow.down.circle"
             }
@@ -108,6 +110,7 @@ struct ManagerView: View {
         case .health: HealthPane(model: model, rerunSetup: rerunSetup)
         case .badges: BadgesPane(model: model)
         case .general: GeneralPane(model: model)
+        case .gaps: GapsPane(model: model)
         case .keys: KeysPane(model: model)
         case .updates: UpdatesPane(model: model)
         }
@@ -304,6 +307,145 @@ struct SaveBar: View {
             }
         }
         .padding(.top, 4)
+    }
+}
+
+/// The empty space AeroSpace keeps around tiled windows. The app leaves the
+/// chosen sizes in ~/.config/kuro/gaps; kuro-apply.sh shifts the repository's
+/// own [gaps] by the difference, checks the result, and reloads. A refused one
+/// leaves the last good config running, the way Your keys does.
+struct GapsPane: View {
+    @Bindable var model: KuroModel
+    @State private var outer = 40.0
+    @State private var inner = 16.0
+    @State private var savedOuter = 40.0
+    @State private var savedInner = 16.0
+
+    private var changed: Bool { outer != savedOuter || inner != savedInner }
+
+    var body: some View {
+        Text("The empty space AeroSpace keeps around your tiled windows. Outer is the margin to the screen edges; inner is the gap between neighbouring windows. The top margin moves with the outer value but always clears the bar, so a window never slips under it.")
+            .lede()
+        GapPreview(outer: outer, inner: inner)
+        Block(title: "Outer", detail: "The margin to the screen edges. \(Int(outer)) pt.") {
+            gapSlider($outer, range: 0...100)
+        }
+        Block(title: "Inner", detail: "The gap between windows. \(Int(inner)) pt.") {
+            gapSlider($inner, range: 0...60)
+        }
+        HStack(spacing: 10) {
+            ActionButton(title: "Check", model: model) { await apply(check: true) }
+            ActionButton(title: "Apply", model: model, primary: true) { await apply(check: false) }
+                .disabled(!changed)
+            if changed {
+                Button("Revert") { withAnimation(Kuro.spring) { outer = savedOuter; inner = savedInner } }
+                    .buttonStyle(PillButtonStyle())
+            }
+            Spacer()
+            let defaults = repoDefaults
+            Button("Kuro's default") { withAnimation(Kuro.spring) { outer = Double(defaults.outer); inner = Double(defaults.inner) } }
+                .buttonStyle(PillButtonStyle())
+                .disabled(Int(outer) == defaults.outer && Int(inner) == defaults.inner)
+        }
+        .padding(.top, 4)
+        .onAppear(perform: load)
+    }
+
+    private func gapSlider(_ value: Binding<Double>, range: ClosedRange<Double>) -> some View {
+        Slider(value: value, in: range, step: 1).tint(Kuro.accent)
+            .disabled(model.console.isRunning)
+    }
+
+    /// The gaps the repository ships with, read from its own aerospace.toml so
+    /// the pane shows the real baseline even if it changes. Falls back to what
+    /// the file has shipped for as long as the app has existed.
+    private var repoDefaults: (outer: Int, inner: Int) {
+        guard let repo = model.repo,
+              let text = try? String(contentsOf: repo.appendingPathComponent("aerospace.toml"), encoding: .utf8)
+        else { return (40, 16) }
+        func value(_ key: String) -> Int? {
+            for line in text.split(separator: "\n") {
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                guard trimmed.hasPrefix(key),
+                      let range = trimmed.range(of: #"\d+"#, options: .regularExpression) else { continue }
+                return Int(trimmed[range])
+            }
+            return nil
+        }
+        return (value("outer.left") ?? 40, value("inner.horizontal") ?? 16)
+    }
+
+    private func load() {
+        let defaults = repoDefaults
+        var o = Double(defaults.outer), i = Double(defaults.inner)
+        if model.demo == nil, let text = try? String(contentsOf: Places.gaps, encoding: .utf8) {
+            for line in text.split(separator: "\n") {
+                let parts = line.split(separator: "=", maxSplits: 1)
+                guard parts.count == 2, let v = Double(parts[1].trimmingCharacters(in: .whitespaces)) else { continue }
+                if parts[0] == "outer" { o = v }
+                if parts[0] == "inner" { i = v }
+            }
+        }
+        outer = o; inner = i; savedOuter = o; savedInner = i
+    }
+
+    /// Writes the sizes, then has AeroSpace check (and with Apply, load) the
+    /// rebuilt config. Check never persists: the file is put back afterwards.
+    private func apply(check: Bool) async {
+        if model.demo == nil {
+            do {
+                try FileManager.default.createDirectory(at: Places.kuro, withIntermediateDirectories: true)
+                let previous = try? String(contentsOf: Places.gaps, encoding: .utf8)
+                try "outer=\(Int(outer))\ninner=\(Int(inner))\n".write(to: Places.gaps, atomically: true, encoding: .utf8)
+                let ok = await model.applyBindings(check: check)
+                if check || !ok {
+                    if let previous { try? previous.write(to: Places.gaps, atomically: true, encoding: .utf8) }
+                    else { try? FileManager.default.removeItem(at: Places.gaps) }
+                }
+                if !check && ok { savedOuter = outer; savedInner = inner }
+            } catch {
+                model.console.note("Could not write \(Places.display(Places.gaps)): \(error.localizedDescription)")
+            }
+        } else {
+            _ = await model.applyBindings(check: check)
+            if !check { savedOuter = outer; savedInner = inner }
+        }
+    }
+}
+
+/// A screen with the bar and two tiled windows, their margins driven by the
+/// sliders, so the sizes read as space before they are applied. Illustrative,
+/// not to scale with any real display.
+struct GapPreview: View {
+    var outer: Double
+    var inner: Double
+    private let scale = 0.5
+    private let barHeight = 14.0
+
+    var body: some View {
+        let o = CGFloat(outer) * scale
+        let g = CGFloat(inner) * scale
+        ZStack(alignment: .top) {
+            RoundedRectangle(cornerRadius: 12).fill(Kuro.void)
+            RoundedRectangle(cornerRadius: 5).fill(Kuro.pill)
+                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Kuro.hairline))
+                .frame(height: barHeight)
+                .padding(.horizontal, 10).padding(.top, 9)
+            HStack(spacing: g) { window; window }
+                .padding(.top, 9 + barHeight + 7 + o)
+                .padding(.leading, o).padding(.trailing, o).padding(.bottom, o)
+        }
+        .frame(height: 184)
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Kuro.hairline))
+        .animation(Kuro.spring, value: outer)
+        .animation(Kuro.spring, value: inner)
+        .accessibilityHidden(true)
+    }
+
+    private var window: some View {
+        RoundedRectangle(cornerRadius: 6).fill(Kuro.rail)
+            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Kuro.accent.opacity(0.55), lineWidth: 1.5))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

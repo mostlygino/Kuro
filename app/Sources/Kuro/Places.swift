@@ -6,6 +6,7 @@ enum Places {
     static let config = home.appendingPathComponent(".config")
     static let kuro = config.appendingPathComponent("kuro")
     static let settings = kuro.appendingPathComponent("settings")
+    static let gaps = kuro.appendingPathComponent("gaps")
     static let localBindings = kuro.appendingPathComponent("aerospace.local.toml")
     static let barLink = config.appendingPathComponent("sketchybar")
     static let aerospaceLink = home.appendingPathComponent(".aerospace.toml")
