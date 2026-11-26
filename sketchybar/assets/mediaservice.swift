@@ -31,6 +31,17 @@ enum WebService: String, CaseIterable {
         default: return true
         }
     }
+
+    /// Sites whose tab title stays the site's own name while they play
+    /// ("TIDAL", "Netflix"), so a title match can never find them. A tab on any
+    /// other service names what it is showing, and one that does not name the
+    /// playing track is not the one playing.
+    var keepsGenericTitle: Bool {
+        switch self {
+        case .netflix, .disney, .prime, .appleTV, .tidal: return true
+        default: return false
+        }
+    }
 }
 
 /// The service a URL belongs to, by host.
@@ -67,7 +78,11 @@ func serviceFromTabs(_ listing: String, playingTitle: String) -> WebService? {
         return service
     }
     let known = Set(tabs.compactMap { webService(forURL: $0.url) })
-    return known.count == 1 ? known.first : nil
+    if known.count == 1 { return known.first }
+    // No tab names the track. The YouTube tab left open beside Tidal names its
+    // own video, so it is not the player; only the generic-title sites remain.
+    let generic = known.filter(\.keepsGenericTitle)
+    return generic.count == 1 ? generic.first : nil
 }
 
 // The tab listing, per scripting dialect. Safari names its tabs `name`; Dia,
@@ -81,12 +96,16 @@ func tabListingScript(for bundleID: String) -> String? {
         titleKey = "title"
     default: return nil
     }
+    // `character id 9`, not `tab`: inside a browser's tell block `tab` is the
+    // browser's tab class, which comes out as the word "tab", so no line ever
+    // split and no site was ever recognised in Dia or the Chromium family.
     return """
+    set sep to character id 9
     tell application id "\(bundleID)"
         set out to ""
         repeat with w in windows
             repeat with t in tabs of w
-                set out to out & (URL of t) & tab & (\(titleKey) of t) & linefeed
+                set out to out & (URL of t) & sep & (\(titleKey) of t) & linefeed
             end repeat
         end repeat
         return out
@@ -233,8 +252,10 @@ func drawTidalMark(into ctx: CGContext, size: Int, phase: CGFloat) {
     let canvas = CGFloat(size)
     ctx.clear(CGRect(x: 0, y: 0, width: canvas, height: canvas))
     let (alpha, grow) = breath(phase)
-    let h = canvas * 0.84 * grow / 3          // half a diamond's diagonal
-    let cx = canvas / 2, cy = canvas / 2 + h / 2
+    // h is half a diamond's diagonal: the row is 6h wide and the mark 4h tall,
+    // so 6h fills 90% of the slot and the whole mark sits on its centre.
+    let h = canvas * 0.15 * grow
+    let cx = canvas / 2, cy = canvas / 2 + h
     ctx.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: alpha))
     for (dx, dy) in [(-2 * h, 0), (0, 0), (2 * h, 0), (0, -2 * h)] as [(CGFloat, CGFloat)] {
         let x = cx + dx, y = cy + dy
@@ -309,7 +330,11 @@ func serviceSelfTest(_ expect: (Bool, String) -> Void) {
     expect(serviceFromTabs("https://www.netflix.com/watch/1\tNetflix\nhttps://a.com\tA\n",
                            playingTitle: "Stranger Things") == .netflix,
            "the one streaming tab when no title matches")
-    expect(serviceFromTabs(tabs, playingTitle: "Something else") == nil, "two services and no match is no answer")
+    expect(serviceFromTabs(tabs, playingTitle: "Something else") == .netflix, "a titled tab that does not match is not the player")
+    expect(serviceFromTabs("https://www.youtube.com/watch?v=a\tLofi Girl - YouTube\nhttps://tidal.com/album/1\tTIDAL\n",
+                           playingTitle: "Raadsel") == .tidal, "tidal beside an unrelated youtube tab")
+    expect(serviceFromTabs("https://www.netflix.com/watch/1\tNetflix\nhttps://tidal.com/\tTIDAL\n",
+                           playingTitle: "Raadsel") == nil, "two generic-title sites and no match is no answer")
     expect(WebService.allCases.allSatisfy {
         $0 == .tidal || glyphMark(for: $0) != nil || symbolMark(for: $0) != nil || standInApp(for: $0) != nil
     }, "every service has a mark")

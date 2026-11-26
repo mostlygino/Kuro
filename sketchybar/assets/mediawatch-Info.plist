@@ -38,6 +38,8 @@
 	<!-- What the user is shown when the tap first starts. Worth being plain
 	     about the scope, because "system audio" sounds like all of it and this
 	     only ever taps the one process that is playing. -->
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Reads the browser's tab addresses, so Now Playing can show which site is playing: Tidal, Netflix, YouTube and the rest.</string>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>Reads the audio of whatever Spotify is playing, so the menu bar waveform moves with the actual sound instead of being a canned animation. Nothing is recorded or written to disk.</string>
 </dict>
